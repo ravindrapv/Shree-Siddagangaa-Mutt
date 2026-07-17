@@ -34,8 +34,13 @@ export default function GlobalSearchPage() {
         (b.guest?.phone && b.guest.phone.includes(cleanQuery))
       );
 
+      // Filter out guest cards if they already have an active booking displayed in results to avoid duplicates
+      const finalGuests = guestResults.filter(g => 
+        !bookingsResults.some(b => b.guestId === g.id && b.status === "ACTIVE")
+      );
+
       setResults({
-        guests: guestResults,
+        guests: finalGuests,
         bookings: bookingsResults
       });
 

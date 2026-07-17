@@ -72,7 +72,7 @@ export default function NewBookingWizard() {
   const [checkInDate, setCheckInDate] = useState(today);
   const [checkOutDate, setCheckOutDate] = useState(tomorrow);
   const [noOfDays, setNoOfDays] = useState(1);
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
   const [discount, setDiscount] = useState(0);
   const [advancePaid, setAdvancePaid] = useState(500);
@@ -114,9 +114,11 @@ export default function NewBookingWizard() {
 
   // Sync totalAmount with room tariff and stay days
   useEffect(() => {
-    const roomTariff = selectedRoom ? selectedRoom.ratePerDay : 300;
+    const roomTariff = selectedRooms.length > 0 
+      ? selectedRooms.reduce((acc, r) => acc + r.ratePerDay, 0)
+      : 300;
     setTotalAmount(roomTariff * noOfDays);
-  }, [selectedRoom, noOfDays]);
+  }, [selectedRooms, noOfDays]);
 
   // Sync payment received with advance paid
   useEffect(() => {
@@ -206,7 +208,7 @@ export default function NewBookingWizard() {
   };
 
   // Calculate pricing numbers
-  const roomTariff = selectedRoom ? selectedRoom.ratePerDay : 300;
+  const roomTariff = selectedRooms.length > 0 ? selectedRooms.reduce((acc, r) => acc + r.ratePerDay, 0) : 300;
   const balanceAmount = totalAmount - discount - advancePaid;
 
   // Complete Step 1: Save Guest & Next
@@ -220,6 +222,14 @@ export default function NewBookingWizard() {
     if (cleanPhone.length !== 10) {
       toast.error("Phone number must be exactly 10 digits");
       return;
+    }
+
+    if (idType === "Aadhaar Card") {
+      const cleanAadhaar = idNumber.replace(/\D/g, "");
+      if (cleanAadhaar.length !== 12) {
+        toast.error("Aadhaar Card number must be exactly 12 digits");
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -247,10 +257,20 @@ export default function NewBookingWizard() {
     });
   };
 
+  const handleRoomToggle = (room: any) => {
+    setSelectedRooms(prev => {
+      const exists = prev.find(r => r.id === room.id);
+      if (exists) {
+        return prev.filter(r => r.id !== room.id);
+      }
+      return [...prev, room];
+    });
+  };
+
   // Complete Step 2: Validate Room Selection & Next
   const handleStep2Next = () => {
-    if (!selectedRoom) {
-      toast.error("Please click and select an available room from floor layout");
+    if (selectedRooms.length === 0) {
+      toast.error("Please click and select at least one available room from floor layout");
       return;
     }
     setStep(3);
@@ -263,7 +283,8 @@ export default function NewBookingWizard() {
       try {
         const bookingPayload = {
           guestId,
-          roomId: selectedRoom.id,
+          roomId: selectedRooms[0].id,
+          roomIds: selectedRooms.map(r => r.id),
           checkInDate: new Date(checkInDate).toISOString(),
           checkOutDate: new Date(checkOutDate).toISOString(),
           noOfDays,
@@ -281,7 +302,7 @@ export default function NewBookingWizard() {
         setStep(4);
         toast.success("Stay booked successfully!");
       } catch (err) {
-        toast.error("Booking failed. Please try again.");
+        toast.error(err instanceof Error ? err.message : "Booking failed. Please try again.");
       }
     });
   };
@@ -301,7 +322,7 @@ export default function NewBookingWizard() {
     setIdNumber("");
     setFamilyMembers([]);
     setNoOfPersons(1);
-    setSelectedRoom(null);
+    setSelectedRooms([]);
     setDiscount(0);
     setAdvancePaid(200);
     setPaymentNote("Advance payment received.");
@@ -438,9 +459,17 @@ export default function NewBookingWizard() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 1234 5678 9012"
+                      placeholder={idType === "Aadhaar Card" ? "e.g. 123456789012" : "e.g. ID proof number"}
                       value={idNumber}
-                      onChange={(e) => setIdNumber(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (idType === "Aadhaar Card") {
+                          const cleaned = val.replace(/\D/g, "").slice(0, 12);
+                          setIdNumber(cleaned);
+                        } else {
+                          setIdNumber(val);
+                        }
+                      }}
                       className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold"
                     />
                   </div>
@@ -657,7 +686,7 @@ export default function NewBookingWizard() {
                       const isOccupied = room.status === "OCCUPIED";
                       const isCleaning = room.status === "CLEANING";
                       const isMaint = room.status === "MAINTENANCE";
-                      const isSelected = selectedRoom?.id === room.id;
+                      const isSelected = selectedRooms.some(r => r.id === room.id);
 
                       let btnStyle = "border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/80 text-emerald-800";
                       
@@ -674,7 +703,7 @@ export default function NewBookingWizard() {
                           type="button"
                           key={room.id}
                           disabled={isOccupied || isCleaning || isMaint}
-                          onClick={() => setSelectedRoom(room)}
+                          onClick={() => handleRoomToggle(room)}
                           className={`border rounded-xl p-4 text-left transition-all duration-200 flex flex-col justify-between h-[120px] cursor-pointer shadow-sm ${btnStyle}`}
                         >
                           <div className="flex items-start justify-between w-full">
@@ -771,12 +800,36 @@ export default function NewBookingWizard() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-gray-400 font-bold uppercase">Advance Paid (₹)</label>
-                    <input
-                      type="number"
-                      value={advancePaid}
-                      onChange={(e) => setAdvancePaid(Number(e.target.value) || 0)}
-                      className="bg-white border border-gray-200 rounded-xl px-3 py-1 text-sm focus:outline-none focus:border-brand-orange font-bold text-emerald-600"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={advancePaid}
+                        onChange={(e) => setAdvancePaid(Number(e.target.value) || 0)}
+                        className="bg-white border border-gray-200 rounded-xl px-3 py-1 text-sm focus:outline-none focus:border-brand-orange font-bold text-emerald-600 flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAdvancePaid(500)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                          advancePaid === 500
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        500
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdvancePaid(200)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                          advancePaid === 200
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        200
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -947,7 +1000,7 @@ export default function NewBookingWizard() {
 
                     <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
                       <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Room Details</p>
-                      <div className="flex justify-between"><span>Room Number:</span><span className="font-bold">Room {selectedRoom?.roomNumber}</span></div>
+                      <div className="flex justify-between"><span>Room Number:</span><span className="font-bold">Room {confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}</span></div>
                       <div className="flex justify-between"><span>Duration:</span><span>{noOfDays} Days</span></div>
                       <div className="flex justify-between"><span>Check-in Time:</span><span>{new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
                       <div className="flex justify-between"><span>Checkout Scheduled:</span><span>{new Date(confirmedBooking.checkOutDate).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkOutDate).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
@@ -978,7 +1031,7 @@ export default function NewBookingWizard() {
                     <div className="flex flex-col items-center justify-center pt-2 border-t border-dashed border-gray-200">
                       <img 
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                          `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${selectedRoom?.roomNumber}\nAdvance Paid: Rs. ${advancePaid}`
+                          `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}\nAdvance Paid: Rs. ${advancePaid}`
                         )}`} 
                         alt="Receipt QR Code"
                         className="w-24 h-24 border border-gray-150 p-1 bg-white"
@@ -1050,9 +1103,9 @@ export default function NewBookingWizard() {
                   </div>
                   <div className="flex justify-between"><span className="text-gray-400 font-medium">Duration:</span> <span className="text-dark-brown font-bold">{noOfDays} Days</span></div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400 font-medium">Room Assigned:</span>
+                    <span className="text-gray-400 font-medium">Rooms Assigned:</span>
                     <span className="text-dark-brown font-bold">
-                      {selectedRoom ? `Room ${selectedRoom.roomNumber}` : "—"}
+                      {selectedRooms.length > 0 ? `Rooms ${selectedRooms.map(r => r.roomNumber).join(", ")}` : "—"}
                     </span>
                   </div>
                 </div>
@@ -1133,7 +1186,7 @@ export default function NewBookingWizard() {
 
             <div className="space-y-1 py-2.5 my-1.5 border-t border-b border-dashed border-black text-[11px]">
               <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Room Details</p>
-              <div className="flex justify-between"><span>Room Number:</span> <span className="font-bold">Room {selectedRoom?.roomNumber}</span></div>
+              <div className="flex justify-between"><span>Room Number:</span> <span className="font-bold">Room {confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}</span></div>
               <div className="flex justify-between"><span>Check-in:</span> <span>{new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
               <div className="flex justify-between"><span>Check-out:</span> <span>{new Date(confirmedBooking.checkOutDate).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkOutDate).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
               <div className="flex justify-between"><span>Stay Duration:</span> <span>{noOfDays} Days</span></div>
@@ -1167,7 +1220,7 @@ export default function NewBookingWizard() {
             <div className="flex flex-col items-center justify-center py-2 border-t border-dashed border-black">
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${selectedRoom?.roomNumber}\nAdvance Paid: Rs. ${advancePaid}`
+                  `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}\nAdvance Paid: Rs. ${advancePaid}`
                 )}`} 
                 alt="Receipt QR Code"
                 className="w-24 h-24 border border-black p-1 bg-white"

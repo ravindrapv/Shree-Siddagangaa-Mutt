@@ -79,7 +79,7 @@ export default function GuestsClient({ initialGuests }: GuestsClientProps) {
                       <Eye size={13} />
                       View Profile
                     </Link>
-                    {!guest.hasActiveStay ? (
+                     {!guest.hasActiveStay ? (
                       <Link
                         href={`/bookings/new?phone=${guest.phone}`}
                         className="flex items-center gap-1 bg-orange-50 hover:bg-orange-100 text-brand-orange text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
@@ -88,8 +88,8 @@ export default function GuestsClient({ initialGuests }: GuestsClientProps) {
                         Re-book
                       </Link>
                     ) : (
-                      <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg font-bold border border-emerald-150">
-                        Active In Stay
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg font-bold border border-emerald-150 animate-pulse">
+                        Staying (Room {guest.activeRoomNumbers || "—"})
                       </span>
                     )}
                   </div>

@@ -36,7 +36,8 @@ export default function GuestDetailClient({ guest, bookings }: GuestDetailClient
 
   const family = Array.isArray(guest.familyMembers) ? guest.familyMembers : [];
   const totalStays = bookings.length;
-  const activeStay = bookings.find((b) => b.status === "ACTIVE");
+  const activeStays = bookings.filter((b) => b.status === "ACTIVE");
+  const activeStay = activeStays[0];
   const completedStays = bookings.filter((b) => b.status === "CHECKED_OUT").length;
   const totalSpent = bookings
     .filter((b) => b.status === "CHECKED_OUT")
@@ -172,7 +173,9 @@ export default function GuestDetailClient({ guest, bookings }: GuestDetailClient
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-gray-500">
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase">Room Number</p>
-                  <p className="text-sm font-black text-dark-brown mt-1">Room {activeStay.room?.roomNumber}</p>
+                  <p className="text-sm font-black text-dark-brown mt-1">
+                    Room {activeStays.map((b: any) => b.room?.roomNumber).filter(Boolean).join(", ")}
+                  </p>
                   <p className="text-[10px] text-gray-400 font-semibold">Standard Room</p>
                 </div>
                 <div>
