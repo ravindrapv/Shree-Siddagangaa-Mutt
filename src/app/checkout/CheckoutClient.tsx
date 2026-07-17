@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { 
-  Search, 
-  IndianRupee, 
-  CheckCircle, 
-  Printer, 
-  Home, 
+import {
+  Search,
+  IndianRupee,
+  CheckCircle,
+  Printer,
+  Home,
   Calendar,
   AlertTriangle,
   FolderOpen
@@ -29,10 +29,11 @@ export default function CheckoutClient() {
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const lastSearchedRef = useRef<string | null>(null);
 
   // Booking states
   const [activeBooking, setActiveBooking] = useState<any>(null);
-  
+
   // Billing details
   const [additionalCharges, setAdditionalCharges] = useState(0);
   const [chargeNotes, setChargeNotes] = useState("");
@@ -44,8 +45,8 @@ export default function CheckoutClient() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Handle Search for Active Bookings — defined before useEffect to avoid stale closure
-  const handleSearch = useCallback(async (queryToSearch = searchQuery) => {
-    if (!queryToSearch.trim()) {
+  const handleSearch = useCallback(async (queryToSearch: string) => {
+    if (!queryToSearch || !queryToSearch.trim()) {
       toast.error("Please enter a Receipt Number or Room Number");
       return;
     }
@@ -70,12 +71,13 @@ export default function CheckoutClient() {
     } finally {
       setIsSearching(false);
     }
-  }, [searchQuery]);
+  }, [toast]);
 
   // Auto-search from URL params — placed after handleSearch to avoid temporal dead zone
   useEffect(() => {
     const receiptParam = searchParams.get("receipt");
-    if (receiptParam) {
+    if (receiptParam && lastSearchedRef.current !== receiptParam) {
+      lastSearchedRef.current = receiptParam;
       setSearchQuery(receiptParam);
       handleSearch(receiptParam);
     }
@@ -114,6 +116,7 @@ export default function CheckoutClient() {
     setAdditionalCharges(0);
     setChargeNotes("");
     setPaymentNote("Settled final balance at checkout.");
+    lastSearchedRef.current = null;
   };
 
   // Billing math
@@ -132,24 +135,24 @@ export default function CheckoutClient() {
 
       {/* Main split grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start flex-1">
-        
+
         {/* Left Side: Search & Details */}
         <div className="xl:col-span-2 space-y-6 no-print">
-          
+
           {/* Query search form */}
           <Card>
             <CardTitle className="mb-4">Search Active Booking</CardTitle>
-            <form 
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSearch();
+                handleSearch(searchQuery);
               }}
               className="flex gap-2"
             >
               <input
                 type="text"
                 required
-                placeholder="Enter Receipt Number (e.g. RCP1248)..."
+                placeholder="Enter Receipt Number (e.g. RCP1248)... or Room Number (e.g. 30)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold"
@@ -168,7 +171,7 @@ export default function CheckoutClient() {
           {/* If booking found, show stay details */}
           {activeBooking && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-250">
-              
+
               {/* Stay summaries */}
               <Card>
                 <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-4">
@@ -202,7 +205,7 @@ export default function CheckoutClient() {
                 <Card>
                   <CardTitle className="mb-4">Settlement & Additional Charges</CardTitle>
                   <div className="space-y-6">
-                    
+
                     {/* Add extra inputs */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50 rounded-xl border border-gray-100">
                       <div className="flex flex-col gap-1.5">
@@ -238,13 +241,12 @@ export default function CheckoutClient() {
                               key={method}
                               disabled={isDisabled}
                               onClick={() => setPaymentMethod(method)}
-                              className={`py-3 rounded-xl text-xs font-bold text-center border transition-all ${
-                                paymentMethod === method
+                              className={`py-3 rounded-xl text-xs font-bold text-center border transition-all ${paymentMethod === method
                                   ? "bg-brand-orange border-brand-orange text-white shadow-md"
                                   : isDisabled
-                                  ? "bg-gray-100 border-gray-150 text-gray-400 cursor-not-allowed opacity-50"
-                                  : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700 cursor-pointer"
-                              }`}
+                                    ? "bg-gray-100 border-gray-150 text-gray-400 cursor-not-allowed opacity-50"
+                                    : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700 cursor-pointer"
+                                }`}
                             >
                               {method} {isDisabled && " (Disabled)"}
                             </button>
@@ -286,7 +288,7 @@ export default function CheckoutClient() {
                   </div>
                   <h3 className="text-xl font-black text-dark-brown">Check-out Succeeded & Room Vacated!</h3>
                   <p className="text-sm text-gray-500 font-semibold mt-1">Room {activeBooking.room?.roomNumber} has been marked as <strong>CLEANING</strong>.</p>
-                  
+
                   <div className="flex justify-center flex-wrap gap-3 mt-6">
                     <button
                       onClick={() => setIsPreviewOpen(true)}
@@ -359,7 +361,7 @@ export default function CheckoutClient() {
                           <div className="flex justify-between"><span>ID Card:</span><span>{activeBooking.guest?.idType} ({activeBooking.guest?.idNumber})</span></div>
                         </div>
 
-                <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
+                        <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
                           <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Room Details</p>
                           <div className="flex justify-between"><span>Room Number:</span><span className="font-bold">Room {activeBooking.room?.roomNumber}</span></div>
                           <div className="flex justify-between"><span>Duration:</span><span>{activeBooking.noOfDays} Days</span></div>
@@ -388,10 +390,10 @@ export default function CheckoutClient() {
 
                         {/* Verification QR Code */}
                         <div className="flex flex-col items-center justify-center pt-2 border-t border-dashed border-gray-200">
-                          <img 
+                          <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
                               `Kalyani Guest House Check-Out\nReceipt No: ${activeBooking.receiptNo}\nGuest Name: ${activeBooking.guest?.name}\nRoom Number: ${activeBooking.room?.roomNumber}\nSettle Amount: Rs. ${finalBalanceDue}`
-                            )}`} 
+                            )}`}
                             alt="Receipt QR Code"
                             className="w-24 h-24 border border-gray-150 p-1 bg-white"
                           />
@@ -518,7 +520,7 @@ export default function CheckoutClient() {
                   <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Swamiji</span>
                 </div>
               </div>
-              
+
               <h2 className="text-[11px] font-black tracking-wider uppercase leading-tight">Sri Siddaganga Mutt</h2>
               <p className="text-[9px] font-extrabold text-brand-orange uppercase leading-tight">Kalyani Guest House</p>
               <p className="text-[7.5px] text-gray-600 font-semibold leading-tight">Mutt Road, Tumkur, Karnataka - 572104</p>
@@ -585,10 +587,10 @@ export default function CheckoutClient() {
 
             {/* Verification QR Code in Print */}
             <div className="flex flex-col items-center justify-center py-2 border-t border-dashed border-black">
-              <img 
+              <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
                   `Kalyani Guest House Check-Out\nReceipt No: ${activeBooking.receiptNo}\nGuest Name: ${activeBooking.guest?.name}\nRoom Number: ${activeBooking.room?.roomNumber}\nSettle Amount: Rs. ${finalBalanceDue}`
-                )}`} 
+                )}`}
                 alt="Receipt QR Code"
                 className="w-24 h-24 border border-black p-1 bg-white"
               />
