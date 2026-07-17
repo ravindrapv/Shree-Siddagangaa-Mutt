@@ -1,0 +1,958 @@
+{
+  "guests": [
+    {
+      "name": "aaa",
+      "phone": "1234567890",
+      "address": "ab",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "123456789012",
+      "familyMembers": [],
+      "id": "g_8hsxu9qrm",
+      "createdAt": "2026-07-16T19:47:06.519Z",
+      "updatedAt": "2026-07-16T19:47:06.519Z"
+    },
+    {
+      "name": "ddd",
+      "phone": "1111111111",
+      "address": "ddd",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Voter ID",
+      "idNumber": "111111111",
+      "familyMembers": [],
+      "id": "g_g3g16bqif",
+      "createdAt": "2026-07-16T19:55:19.981Z",
+      "updatedAt": "2026-07-16T19:55:19.981Z"
+    },
+    {
+      "name": "ggg",
+      "phone": "2222222222",
+      "address": "cdds",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Voter ID",
+      "idNumber": "2222222222",
+      "familyMembers": [],
+      "id": "g_zi0t6ox8w",
+      "createdAt": "2026-07-16T19:55:58.279Z",
+      "updatedAt": "2026-07-16T19:55:58.279Z"
+    },
+    {
+      "name": "vvvv",
+      "phone": "0000000000",
+      "address": "uyfjfjyuyfuiylk",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "76576476476",
+      "familyMembers": [],
+      "id": "g_87n3rkkds",
+      "createdAt": "2026-07-16T20:17:41.660Z",
+      "updatedAt": "2026-07-16T20:17:41.660Z"
+    },
+    {
+      "name": "venkat",
+      "phone": "6363281317",
+      "address": "davanagere,harihara",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "565721528410",
+      "familyMembers": [],
+      "id": "g_3upbj8w5g",
+      "createdAt": "2026-07-16T20:24:07.585Z",
+      "updatedAt": "2026-07-16T20:24:07.585Z"
+    },
+    {
+      "name": "hhh",
+      "phone": "1121323132",
+      "address": "iiii",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "13324324332321",
+      "familyMembers": [],
+      "id": "g_h808unr1m",
+      "createdAt": "2026-07-17T06:19:00.647Z",
+      "updatedAt": "2026-07-17T06:19:00.647Z"
+    },
+    {
+      "name": "eee",
+      "phone": "8787878787",
+      "address": "qwqwqw",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "99955555333",
+      "familyMembers": [],
+      "id": "g_mtru0igqc",
+      "createdAt": "2026-07-17T06:19:45.616Z",
+      "updatedAt": "2026-07-17T06:19:45.616Z"
+    },
+    {
+      "name": "mmm",
+      "phone": "5454454545",
+      "address": "zzz",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "665543442",
+      "familyMembers": [],
+      "id": "g_q18h1v6a9",
+      "createdAt": "2026-07-17T06:20:36.614Z",
+      "updatedAt": "2026-07-17T06:20:36.614Z"
+    },
+    {
+      "name": "qqq",
+      "phone": "3434344343",
+      "address": "lll",
+      "gender": "Male",
+      "age": 30,
+      "occupation": "Business",
+      "district": "Tumkur",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "4545455454",
+      "familyMembers": [],
+      "id": "g_975zqpw5t",
+      "createdAt": "2026-07-17T06:21:31.375Z",
+      "updatedAt": "2026-07-17T06:21:31.375Z"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r101",
+      "roomNumber": "101",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water",
+        "TV"
+      ],
+      "updatedAt": "2026-07-17T06:17:47.257Z"
+    },
+    {
+      "id": "r102",
+      "roomNumber": "102",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "CLEANING",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water"
+      ],
+      "updatedAt": "2026-07-17T06:20:55.695Z"
+    },
+    {
+      "id": "r103",
+      "roomNumber": "103",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "CLEANING",
+      "capacity": 3,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water",
+        "TV"
+      ],
+      "updatedAt": "2026-07-17T06:48:01.101Z"
+    },
+    {
+      "id": "r104",
+      "roomNumber": "104",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water"
+      ],
+      "updatedAt": "2026-07-17T06:17:36.660Z"
+    },
+    {
+      "id": "r105",
+      "roomNumber": "105",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "OCCUPIED",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [],
+      "updatedAt": "2026-07-17T06:22:32.812Z"
+    },
+    {
+      "id": "r106",
+      "roomNumber": "106",
+      "floor": "Ground Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 5,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water",
+        "TV",
+        "Extra Beds"
+      ]
+    },
+    {
+      "id": "r201",
+      "roomNumber": "201",
+      "floor": "First Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "TV",
+        "Geyser",
+        "WiFi"
+      ]
+    },
+    {
+      "id": "r202",
+      "roomNumber": "202",
+      "floor": "First Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "TV",
+        "Geyser",
+        "WiFi"
+      ]
+    },
+    {
+      "id": "r203",
+      "roomNumber": "203",
+      "floor": "First Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "TV",
+        "Geyser"
+      ]
+    },
+    {
+      "id": "r204",
+      "roomNumber": "204",
+      "floor": "First Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "TV"
+      ]
+    },
+    {
+      "id": "r205",
+      "roomNumber": "205",
+      "floor": "First Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 4,
+      "ratePerDay": 300,
+      "facilities": [
+        "TV",
+        "Geyser",
+        "WiFi",
+        "Balcony"
+      ]
+    },
+    {
+      "id": "r301",
+      "roomNumber": "301",
+      "floor": "Second Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water"
+      ],
+      "updatedAt": "2026-07-17T06:17:49.279Z"
+    },
+    {
+      "id": "r302",
+      "roomNumber": "302",
+      "floor": "Second Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water"
+      ]
+    },
+    {
+      "id": "r303",
+      "roomNumber": "303",
+      "floor": "Second Floor",
+      "type": "Room",
+      "status": "OCCUPIED",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water",
+        "TV"
+      ],
+      "updatedAt": "2026-07-17T06:19:10.714Z"
+    },
+    {
+      "id": "r304",
+      "roomNumber": "304",
+      "floor": "Second Floor",
+      "type": "Room",
+      "status": "AVAILABLE",
+      "capacity": 2,
+      "ratePerDay": 300,
+      "facilities": [],
+      "updatedAt": "2026-07-17T06:17:52.323Z"
+    },
+    {
+      "id": "r305",
+      "roomNumber": "305",
+      "floor": "Second Floor",
+      "type": "Room",
+      "status": "CLEANING",
+      "capacity": 6,
+      "ratePerDay": 300,
+      "facilities": [
+        "Hot Water",
+        "TV",
+        "Attached Bath"
+      ],
+      "updatedAt": "2026-07-17T06:47:11.722Z"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "b_x7ez7wxjb",
+      "receiptNo": "RCP9277",
+      "guestId": "g_8hsxu9qrm",
+      "roomId": "r101",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 750,
+      "totalAmount": 375,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T19:49:00.244Z",
+      "updatedAt": "2026-07-16T19:49:29.511Z"
+    },
+    {
+      "id": "b_x670mb6mh",
+      "receiptNo": "RCP7984",
+      "guestId": "g_8hsxu9qrm",
+      "roomId": "r305",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T19:52:21.213Z",
+      "updatedAt": "2026-07-16T20:04:30.774Z"
+    },
+    {
+      "id": "b_6ph6z8ifh",
+      "receiptNo": "RCP2269",
+      "guestId": "g_8hsxu9qrm",
+      "roomId": "r102",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 200,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T19:54:31.994Z",
+      "updatedAt": "2026-07-16T19:58:52.168Z"
+    },
+    {
+      "id": "b_4e8359bxb",
+      "receiptNo": "RCP3234",
+      "guestId": "g_g3g16bqif",
+      "roomId": "r103",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 200,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T19:55:35.556Z",
+      "updatedAt": "2026-07-16T20:19:56.016Z"
+    },
+    {
+      "id": "b_ap65xf1zp",
+      "receiptNo": "RCP2139",
+      "guestId": "g_zi0t6ox8w",
+      "roomId": "r304",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 200,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T19:56:08.889Z",
+      "updatedAt": "2026-07-16T20:21:45.017Z"
+    },
+    {
+      "id": "b_r9kd8ud6o",
+      "receiptNo": "RCP3465",
+      "guestId": "g_g3g16bqif",
+      "roomId": "r102",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T20:16:57.968Z",
+      "updatedAt": "2026-07-16T20:19:36.386Z"
+    },
+    {
+      "id": "b_47dvt4e4e",
+      "receiptNo": "RCP7487",
+      "guestId": "g_87n3rkkds",
+      "roomId": "r301",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-17T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 200,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T20:18:42.222Z",
+      "updatedAt": "2026-07-16T20:22:23.986Z"
+    },
+    {
+      "id": "b_y77aktqtj",
+      "receiptNo": "RCP6110",
+      "guestId": "g_3upbj8w5g",
+      "roomId": "r104",
+      "checkInDate": "2026-07-16T00:00:00.000Z",
+      "checkOutDate": "2026-07-18T00:00:00.000Z",
+      "noOfDays": 2,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 1000,
+      "totalAmount": 600,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-16T20:25:49.132Z",
+      "updatedAt": "2026-07-16T20:28:25.218Z"
+    },
+    {
+      "id": "b_spztehxi2",
+      "receiptNo": "RCP4250",
+      "guestId": "g_h808unr1m",
+      "roomId": "r303",
+      "checkInDate": "2026-07-17T00:00:00.000Z",
+      "checkOutDate": "2026-07-18T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": -200,
+      "status": "ACTIVE",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-17T06:19:10.714Z",
+      "updatedAt": "2026-07-17T06:19:10.714Z"
+    },
+    {
+      "id": "b_mvfe1pmyb",
+      "receiptNo": "RCP1885",
+      "guestId": "g_mtru0igqc",
+      "roomId": "r103",
+      "checkInDate": "2026-07-17T00:00:00.000Z",
+      "checkOutDate": "2026-07-18T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-17T06:20:07.748Z",
+      "updatedAt": "2026-07-17T06:48:01.101Z"
+    },
+    {
+      "id": "b_ihhn4g47t",
+      "receiptNo": "RCP9449",
+      "guestId": "g_q18h1v6a9",
+      "roomId": "r305",
+      "checkInDate": "2026-07-17T00:00:00.000Z",
+      "checkOutDate": "2026-07-18T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 200,
+      "totalAmount": 300,
+      "balanceAmount": 0,
+      "status": "CHECKED_OUT",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-17T06:20:55.695Z",
+      "updatedAt": "2026-07-17T06:47:11.722Z"
+    },
+    {
+      "id": "b_8yojltzl8",
+      "receiptNo": "RCP8470",
+      "guestId": "g_975zqpw5t",
+      "roomId": "r105",
+      "checkInDate": "2026-07-17T00:00:00.000Z",
+      "checkOutDate": "2026-07-18T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": -200,
+      "status": "ACTIVE",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-17T06:22:32.812Z",
+      "updatedAt": "2026-07-17T06:22:32.812Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "p_fwjhme6l8",
+      "bookingId": "b_x7ez7wxjb",
+      "amount": 750,
+      "method": "CASH",
+      "receiptNo": "RCP9277",
+      "date": "2026-07-16T19:49:00.244Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T19:49:00.244Z"
+    },
+    {
+      "id": "p_oyr4uttsm",
+      "bookingId": "b_x670mb6mh",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP7984",
+      "date": "2026-07-16T19:52:21.213Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T19:52:21.213Z"
+    },
+    {
+      "id": "p_ptp4wvjbp",
+      "bookingId": "b_6ph6z8ifh",
+      "amount": 200,
+      "method": "CASH",
+      "receiptNo": "RCP2269",
+      "date": "2026-07-16T19:54:31.994Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T19:54:31.994Z"
+    },
+    {
+      "id": "p_owzya5zy3",
+      "bookingId": "b_4e8359bxb",
+      "amount": 200,
+      "method": "CASH",
+      "receiptNo": "RCP3234",
+      "date": "2026-07-16T19:55:35.556Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T19:55:35.556Z"
+    },
+    {
+      "id": "p_g0mcopemf",
+      "bookingId": "b_ap65xf1zp",
+      "amount": 200,
+      "method": "CASH",
+      "receiptNo": "RCP2139",
+      "date": "2026-07-16T19:56:08.889Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T19:56:08.889Z"
+    },
+    {
+      "id": "p_o6v6b2583",
+      "bookingId": "b_6ph6z8ifh",
+      "amount": 100,
+      "method": "CASH",
+      "receiptNo": "RCP2269",
+      "date": "2026-07-16T19:58:52.168Z",
+      "notes": "Settled final balance at checkout.",
+      "createdAt": "2026-07-16T19:58:52.168Z"
+    },
+    {
+      "id": "p_fjbhcs21g",
+      "bookingId": "b_r9kd8ud6o",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP3465",
+      "date": "2026-07-16T20:16:57.968Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T20:16:57.968Z"
+    },
+    {
+      "id": "p_eui11zgja",
+      "bookingId": "b_47dvt4e4e",
+      "amount": 200,
+      "method": "CASH",
+      "receiptNo": "RCP7487",
+      "date": "2026-07-16T20:18:42.222Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T20:18:42.222Z"
+    },
+    {
+      "id": "p_tiqhq5ir4",
+      "bookingId": "b_4e8359bxb",
+      "amount": 100,
+      "method": "CASH",
+      "receiptNo": "RCP3234",
+      "date": "2026-07-16T20:19:56.016Z",
+      "notes": "Settled final balance at checkout.",
+      "createdAt": "2026-07-16T20:19:56.016Z"
+    },
+    {
+      "id": "p_w3imhva87",
+      "bookingId": "b_ap65xf1zp",
+      "amount": 100,
+      "method": "CASH",
+      "receiptNo": "RCP2139",
+      "date": "2026-07-16T20:21:45.017Z",
+      "notes": "Settled final balance at checkout.",
+      "createdAt": "2026-07-16T20:21:45.017Z"
+    },
+    {
+      "id": "p_6z6i840zl",
+      "bookingId": "b_47dvt4e4e",
+      "amount": 100,
+      "method": "CASH",
+      "receiptNo": "RCP7487",
+      "date": "2026-07-16T20:22:23.986Z",
+      "notes": "Settled final balance at checkout.",
+      "createdAt": "2026-07-16T20:22:23.986Z"
+    },
+    {
+      "id": "p_qfm2rq4i9",
+      "bookingId": "b_y77aktqtj",
+      "amount": 1000,
+      "method": "CASH",
+      "receiptNo": "RCP6110",
+      "date": "2026-07-16T20:25:49.132Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-16T20:25:49.132Z"
+    },
+    {
+      "id": "p_uk54yt4bx",
+      "bookingId": "b_spztehxi2",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP4250",
+      "date": "2026-07-17T06:19:10.714Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-17T06:19:10.714Z"
+    },
+    {
+      "id": "p_q5xb8natb",
+      "bookingId": "b_mvfe1pmyb",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP1885",
+      "date": "2026-07-17T06:20:07.748Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-17T06:20:07.748Z"
+    },
+    {
+      "id": "p_r1mxj6sr6",
+      "bookingId": "b_ihhn4g47t",
+      "amount": 200,
+      "method": "CASH",
+      "receiptNo": "RCP9449",
+      "date": "2026-07-17T06:20:55.695Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-17T06:20:55.695Z"
+    },
+    {
+      "id": "p_jjhohhbzt",
+      "bookingId": "b_8yojltzl8",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP8470",
+      "date": "2026-07-17T06:22:32.812Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-17T06:22:32.812Z"
+    },
+    {
+      "id": "p_3p3lr77v5",
+      "bookingId": "b_ihhn4g47t",
+      "amount": 100,
+      "method": "CASH",
+      "receiptNo": "RCP9449",
+      "date": "2026-07-17T06:47:11.722Z",
+      "notes": "Settled final balance at checkout.",
+      "createdAt": "2026-07-17T06:47:11.722Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log_09mtzew42",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP1885 checked out. Room 103 set to CLEANING.",
+      "timestamp": "2026-07-17T06:48:01.101Z"
+    },
+    {
+      "id": "log_lshva9sum",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP9449 checked out. Room 305 set to CLEANING.",
+      "timestamp": "2026-07-17T06:47:11.722Z"
+    },
+    {
+      "id": "log_bl68hbicw",
+      "userId": "system-user",
+      "action": "ROOM_TRANSFER",
+      "details": "Booking RCP9449 transferred from Room 102 to Room 305",
+      "timestamp": "2026-07-17T06:46:21.004Z"
+    },
+    {
+      "id": "log_pqipy3hy8",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP8470 created (Room 105)",
+      "timestamp": "2026-07-17T06:22:32.812Z"
+    },
+    {
+      "id": "log_tuthm13e9",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP9449 created (Room 102)",
+      "timestamp": "2026-07-17T06:20:55.695Z"
+    },
+    {
+      "id": "log_burdguc81",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP1885 created (Room 103)",
+      "timestamp": "2026-07-17T06:20:07.748Z"
+    },
+    {
+      "id": "log_hnxznqwk8",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP4250 created (Room 303)",
+      "timestamp": "2026-07-17T06:19:10.714Z"
+    },
+    {
+      "id": "log_csz4n1uw3",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP6110 checked out. Room 104 set to CLEANING.",
+      "timestamp": "2026-07-16T20:28:25.218Z"
+    },
+    {
+      "id": "log_yzf62i1x9",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP6110 created (Room 104)",
+      "timestamp": "2026-07-16T20:25:49.132Z"
+    },
+    {
+      "id": "log_up9nvt9a7",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP7487 checked out. Room 301 set to CLEANING.",
+      "timestamp": "2026-07-16T20:22:23.986Z"
+    },
+    {
+      "id": "log_ijy21dvr6",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP2139 checked out. Room 304 set to CLEANING.",
+      "timestamp": "2026-07-16T20:21:45.017Z"
+    },
+    {
+      "id": "log_1xeadwcfs",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP3234 checked out. Room 103 set to CLEANING.",
+      "timestamp": "2026-07-16T20:19:56.016Z"
+    },
+    {
+      "id": "log_em4vtgzf5",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP3465 checked out. Room 102 set to CLEANING.",
+      "timestamp": "2026-07-16T20:19:36.386Z"
+    },
+    {
+      "id": "log_t8k9phdqb",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP7487 created (Room 301)",
+      "timestamp": "2026-07-16T20:18:42.222Z"
+    },
+    {
+      "id": "log_9dzftrmwc",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP3465 created (Room 102)",
+      "timestamp": "2026-07-16T20:16:57.968Z"
+    },
+    {
+      "id": "log_u8i4i5h8s",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP7984 checked out. Room 305 set to CLEANING.",
+      "timestamp": "2026-07-16T20:04:30.774Z"
+    },
+    {
+      "id": "log_g65phwykw",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP2269 checked out. Room 102 set to CLEANING.",
+      "timestamp": "2026-07-16T19:58:52.168Z"
+    },
+    {
+      "id": "log_fg3f4eqr5",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP2139 created (Room 304)",
+      "timestamp": "2026-07-16T19:56:08.889Z"
+    },
+    {
+      "id": "log_4em1dwrd7",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP3234 created (Room 103)",
+      "timestamp": "2026-07-16T19:55:35.556Z"
+    },
+    {
+      "id": "log_6ik80aaf1",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP2269 created (Room 102)",
+      "timestamp": "2026-07-16T19:54:31.994Z"
+    },
+    {
+      "id": "log_23jl39u6r",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP7984 created (Room 305)",
+      "timestamp": "2026-07-16T19:52:21.213Z"
+    },
+    {
+      "id": "log_1hs6n541j",
+      "userId": "system-user",
+      "action": "CHECKOUT",
+      "details": "Booking RCP9277 checked out. Room 101 set to CLEANING.",
+      "timestamp": "2026-07-16T19:49:29.511Z"
+    },
+    {
+      "id": "log_cmyjbjral",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP9277 created (Room 101)",
+      "timestamp": "2026-07-16T19:49:00.244Z"
+    }
+  ],
+  "settings": [
+    {
+      "id": "s1",
+      "key": "templeName",
+      "value": "Siddaganga Mata Tumkur"
+    },
+    {
+      "id": "s2",
+      "key": "templeAddress",
+      "value": "Siddaganga Mutt Road, Tumkur, Karnataka, India - 572104"
+    },
+    {
+      "id": "s3",
+      "key": "contactNumber",
+      "value": "+91 816 2282247"
+    },
+    {
+      "id": "s4",
+      "key": "receiptFooter",
+      "value": "This is a computer-generated receipt. Thank you for your support. Have a safe & blessed stay."
+    }
+  ]
+}

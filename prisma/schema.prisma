@@ -1,0 +1,130 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  RECEPTION
+  ADMIN
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+}
+
+enum BookingStatus {
+  ACTIVE
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  MIXED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  username     String     @unique
+  name         String
+  passwordHash String
+  role         Role       @default(RECEPTION)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Guest {
+  id               String    @id @default(uuid())
+  name             String
+  phone            String    @unique
+  address          String
+  gender           String
+  age              Int
+  occupation       String?
+  district         String
+  state            String    @default("Karnataka")
+  pin              String
+  idType           String    // Aadhaar Card, Voter ID, PAN Card, Passport
+  idNumber         String    @unique
+  emergencyContact String?
+  photoUrl         String?
+  familyMembers    Json?     // Array of family member details
+  bookings         Booking[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  roomNumber  String     @unique
+  floor       String     // Ground Floor, First Floor, Second Floor
+  type        String     // Standard Non-AC, Deluxe AC, etc.
+  status      RoomStatus @default(AVAILABLE)
+  capacity    Int        @default(2)
+  ratePerDay  Float
+  facilities  String[]   // AC, TV, Geyser, etc.
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  receiptNo     String        @unique // e.g., RCP1250
+  guestId       String
+  guest         Guest         @relation(fields: [guestId], references: [id])
+  roomId        String
+  room          Room          @relation(fields: [roomId], references: [id])
+  checkInDate   DateTime
+  checkOutDate  DateTime
+  noOfDays      Int
+  noOfPersons   Int
+  discount      Float         @default(0)
+  advancePaid   Float         @default(0)
+  totalAmount   Float
+  balanceAmount Float
+  status        BookingStatus @default(ACTIVE)
+  paymentMethod PaymentMethod @default(CASH)
+  paymentNote   String?
+  payments      Payment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  amount        Float
+  method        PaymentMethod
+  receiptNo     String
+  date          DateTime      @default(now())
+  notes         String?
+  createdAt     DateTime      @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}

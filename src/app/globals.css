@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-orange: #D96A0B;
+  --color-brand-orange-hover: #BF5A06;
+  --color-brand-orange-light: #FFF0E4;
+  --color-dark-brown: #1E120C;
+  --color-dark-brown-medium: #2B1D16;
+  --color-dark-brown-light: #3D2E26;
+  
+  --color-room-available: #10B981;
+  --color-room-occupied: #EF4444;
+  --color-room-cleaning: #F59E0B;
+  --color-room-maintenance: #6B7280;
+  
+  --radius-card: 12px;
+  
+  --shadow-premium: 0 4px 20px -2px rgba(43, 29, 22, 0.05), 0 2px 8px -1px rgba(43, 29, 22, 0.03);
+  --shadow-premium-lg: 0 10px 30px -5px rgba(43, 29, 22, 0.08), 0 4px 12px -2px rgba(43, 29, 22, 0.04);
+}
+
+:root {
+  --background: #F8F9FA;
+  --foreground: #2B1D16;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Screen Styles: hide print-only by default on monitor/screens */
+.print-only {
+  display: none !important;
+}
+
+/* Print Styling */
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+
+  /* Target exact thermal dimensions (80mm) */
+  @page {
+    size: auto;
+    margin: 0mm !important;
+  }
+
+  .thermal-receipt {
+    width: 74mm !important;
+    max-width: 74mm !important;
+    padding: 1.5mm !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 !important;
+  }
+
+  .a4-receipt {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: auto !important;
+    padding: 15mm !important;
+    font-size: 14px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+  }
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Glassmorphism details */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Pulse animation for cleaning/maintenance statuses */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2s infinite ease-in-out;
+}
