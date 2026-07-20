@@ -23,6 +23,7 @@ import Modal from "@/components/ui/Modal";
 import { useToast } from "@/hooks/use-toast";
 import { getRooms, searchGuest, createGuest, createBooking } from "@/app/actions";
 import Link from "next/link";
+import { renderA4Receipt } from "../BookingsClient";
 
 interface FamilyMember {
   name: string;
@@ -45,6 +46,26 @@ export default function NewBookingWizard() {
 
   // Step 1: Guest Information State
   const [phoneSearch, setPhoneSearch] = useState("");
+  const [phoneSuggestions, setPhoneSuggestions] = useState<any[]>([]);
+
+  // Debounced search for phone lookup suggestions
+  useEffect(() => {
+    if (!phoneSearch.trim()) {
+      setPhoneSuggestions([]);
+      return;
+    }
+    const delay = setTimeout(async () => {
+      try {
+        const results = await searchGuest(phoneSearch);
+        setPhoneSuggestions(results.slice(0, 5));
+      } catch (err) {
+        console.error("Phone suggestions error:", err);
+      }
+    }, 250);
+
+    return () => clearTimeout(delay);
+  }, [phoneSearch]);
+
   const [guestId, setGuestId] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
@@ -391,23 +412,44 @@ export default function NewBookingWizard() {
               <div className="space-y-6">
                 
                 {/* Search Header */}
-                <div className="flex gap-2 p-4 bg-orange-50/40 rounded-xl border border-orange-100/50">
-                  <input
-                    type="text"
-                    placeholder="Enter Phone Number..."
-                    value={phoneSearch}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      if (val.length <= 10) {
-                        setPhoneSearch(val);
-                      }
-                    }}
-                    className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange font-semibold text-dark-brown"
-                  />
+                <div className="flex gap-2 p-4 bg-orange-50/40 rounded-xl border border-orange-100/50 relative">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      placeholder="Enter Phone Number..."
+                      value={phoneSearch}
+                      onChange={(e) => setPhoneSearch(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange font-semibold text-dark-brown shadow-sm"
+                    />
+                    {phoneSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-50">
+                        {phoneSuggestions.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setPhoneSearch(s.phone);
+                              setPhoneSuggestions([]);
+                              handleGuestLookup(s.phone);
+                            }}
+                            className="w-full text-left px-4 py-3 text-xs text-dark-brown font-semibold hover:bg-orange-50/50 flex justify-between items-center transition-colors cursor-pointer"
+                          >
+                            <div>
+                              <span className="font-extrabold text-dark-brown">{s.name}</span>
+                              <span className="text-[10px] text-gray-400 font-semibold ml-2">({s.phone})</span>
+                            </div>
+                            <span className="text-[9px] text-brand-orange bg-orange-50/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              {s.district}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleGuestLookup()}
-                    className="bg-brand-orange hover:bg-brand-orange-hover text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                    className="bg-brand-orange hover:bg-brand-orange-hover text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
                   >
                     <Search size={16} />
                     Search
@@ -957,102 +999,27 @@ export default function NewBookingWizard() {
               </div>
 
               {/* Receipt Preview Modal */}
-              <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title="Check-in Receipt Preview" size="sm">
-                <div className="bg-gray-100 p-4 rounded-xl flex justify-center no-print">
-                  <div className="bg-white border border-gray-200 shadow-md p-6 max-w-sm w-full font-mono text-[11px] text-black space-y-4 rounded-sm relative leading-relaxed">
-                    {/* Ticket Notches */}
-                    <div className="absolute top-1/2 -left-1.5 w-3 h-3 bg-gray-100 rounded-full border-r border-gray-200"></div>
-                    <div className="absolute top-1/2 -right-1.5 w-3 h-3 bg-gray-100 rounded-full border-l border-gray-200"></div>
-
-                    <div className="text-center mb-4 flex flex-col items-center border-b border-dashed border-gray-200 pb-3">
-                      {/* Three Swamiji Photos */}
-                      <div className="flex justify-center gap-3 mb-2">
-                        <div className="flex flex-col items-center">
-                          <img src="/swami-senior.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Dr. S. Swamiji" />
-                          <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Dr. Sri S. Swamiji</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <img src="/swami-current.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Sri S. Swamiji" />
-                          <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Sri S. Swamiji</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <img src="/swami-assistant.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Sri Swamiji" />
-                          <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Swamiji</span>
-                        </div>
-                      </div>
-                      <h2 className="text-xs font-extrabold uppercase tracking-wide">Sri Siddaganga Mutt</h2>
-                      <p className="text-[9px] text-brand-orange font-bold uppercase leading-tight">Kalyani Guest House</p>
-                      <p className="text-[8px] text-gray-400">Mutt Road, Tumkur, Karnataka - 572104</p>
-                    </div>
-
-                    <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                      <div className="flex justify-between"><span>Receipt No:</span><span className="font-bold">{confirmedBooking.receiptNo}</span></div>
-                      <div className="flex justify-between"><span>Date:</span><span>{new Date(confirmedBooking.createdAt).toLocaleString("en-IN")}</span></div>
-                    </div>
-
-                    <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                      <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Guest Details</p>
-                      <div className="flex justify-between"><span>Name:</span><span className="font-bold">{guestName}</span></div>
-                      <div className="flex justify-between"><span>Phone:</span><span>{guestPhone}</span></div>
-                      <div className="flex justify-between"><span>ID Card:</span><span>{idType} ({idNumber})</span></div>
-                      <div className="flex justify-between"><span>No. of Persons:</span><span>{noOfPersons}</span></div>
-                    </div>
-
-                    <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                      <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Room Details</p>
-                      <div className="flex justify-between"><span>Room Number:</span><span className="font-bold">Room {confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}</span></div>
-                      <div className="flex justify-between"><span>Duration:</span><span>{noOfDays} Days</span></div>
-                      <div className="flex justify-between"><span>Check-in Time:</span><span>{new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-                      <div className="flex justify-between"><span>Checkout Scheduled:</span><span>{new Date(confirmedBooking.checkOutDate).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkOutDate).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-                      <div className="flex justify-between"><span>Tariff (Per Day):</span><span>₹{roomTariff}</span></div>
-                    </div>
-
-                    <div className="space-y-1 text-[10px]">
-                      <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Ledger Summary</p>
-                      <div className="flex justify-between"><span>Total Room Tariff:</span><span>₹{totalAmount}.00</span></div>
-                      <div className="flex justify-between font-bold text-xs pt-1 border-t border-dashed border-gray-150 mt-1">
-                        <span>Advance Paid ({paymentMethod}):</span>
-                        <span>₹{advancePaid}.00</span>
-                      </div>
-                      {balanceAmount < 0 ? (
-                        <div className="flex justify-between text-emerald-600 font-bold">
-                          <span>Refund Due at Checkout:</span>
-                          <span>₹{Math.abs(balanceAmount)}.00</span>
-                        </div>
-                      ) : (
-                        <div className="flex justify-between text-rose-600 font-bold">
-                          <span>Remaining Balance:</span>
-                          <span>₹{balanceAmount}.00</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Verification QR Code */}
-                    <div className="flex flex-col items-center justify-center pt-2 border-t border-dashed border-gray-200">
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                          `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}\nAdvance Paid: Rs. ${advancePaid}`
-                        )}`} 
-                        alt="Receipt QR Code"
-                        className="w-24 h-24 border border-gray-150 p-1 bg-white"
-                      />
-                      <p className="text-[8px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Scan to Verify Stay</p>
-                    </div>
-
-                    <div className="text-center pt-3 border-t border-dashed border-gray-200 text-[9px] text-gray-500 font-semibold italic">
-                      Have a Safe & Blessed Stay!
-                    </div>
+              <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title="Check-in Receipt Preview (A4 Size - Duplicate Copy)" size="lg">
+                <div className="bg-gray-100 p-4 rounded-xl flex flex-col items-center gap-4 no-print overflow-y-auto max-h-[70vh]">
+                  <div className="scale-90 origin-top shadow-lg bg-white rounded-md border border-gray-300">
+                    {renderA4Receipt(confirmedBooking, "devotee")}
+                  </div>
+                  <div className="w-[194mm] border-t border-dashed border-gray-400 text-center py-2 text-xs font-bold text-gray-500">
+                    ✂ ಕತ್ತರಿಸುವ ಗೆರೆ (Cut Here) ✂
+                  </div>
+                  <div className="scale-90 origin-top shadow-lg bg-white rounded-md border border-gray-300">
+                    {renderA4Receipt(confirmedBooking, "office")}
                   </div>
                 </div>
-                <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100 no-print">
                   <button
                     onClick={() => {
                       setIsPreviewOpen(false);
                       handlePrint();
                     }}
-                    className="bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    className="bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-md"
                   >
-                    <Printer size={14} /> Print Receipt
+                    <Printer size={14} /> Print A4 Receipt (2 Copies)
                   </button>
                   <button
                     onClick={() => setIsPreviewOpen(false)}
@@ -1132,111 +1099,15 @@ export default function NewBookingWizard() {
       </div>
 
       {/* -------------------------------------------------------------
-          PRINTABLE THERMAL RECEIPT LAYOUT 
+          PRINTABLE A4 RECEIPT LAYOUT (2 COPIES)
           Rendered ONLY when executing a print job
           ------------------------------------------------------------- */}
       {confirmedBooking && (
         <PrintPortal>
-          <div className="print-only thermal-receipt text-black font-mono">
-            <div className="text-center mb-3 flex flex-col items-center">
-              {/* Three Swamiji Photos */}
-              <div className="flex justify-center gap-3 mb-2.5">
-                <div className="flex flex-col items-center">
-                  <img src="/swami-senior.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Dr. S. Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Dr. Sri S. Swamiji</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <img src="/swami-current.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Sri S. Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Sri S. Swamiji</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <img src="/swami-assistant.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Sri Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Swamiji</span>
-                </div>
-              </div>
-              
-              <h2 className="text-[11px] font-black tracking-wider uppercase leading-tight">Sri Siddaganga Mutt</h2>
-              <p className="text-[9px] font-extrabold text-brand-orange uppercase leading-tight">Kalyani Guest House</p>
-              <p className="text-[7.5px] text-gray-600 font-semibold leading-tight">Mutt Road, Tumkur, Karnataka - 572104</p>
-            </div>
-
-            <div className="border-t border-b border-dashed border-black py-2.5 my-2 space-y-1 text-[11px]">
-              <div className="flex justify-between">
-                <span>Receipt No:</span>
-                <span className="font-bold">{confirmedBooking.receiptNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Date:</span>
-                <span>{new Date(confirmedBooking.createdAt).toLocaleString("en-IN", { hour12: true })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Receipt Type:</span>
-                <span className="font-bold">GUEST CHECK-IN</span>
-              </div>
-            </div>
-
-            <div className="space-y-1 py-1.5 text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Guest Details</p>
-              <div className="flex justify-between"><span>Guest Name:</span> <span className="font-bold">{guestName}</span></div>
-              <div className="flex justify-between"><span>Phone Number:</span> <span>{guestPhone}</span></div>
-              <div className="flex justify-between"><span>ID Card:</span> <span>{idType} ({idNumber})</span></div>
-              <div className="flex justify-between"><span>No. of Persons:</span> <span>{noOfPersons}</span></div>
-              <p className="text-[10px] truncate max-w-[280px]">Address: {address}</p>
-            </div>
-
-            <div className="space-y-1 py-2.5 my-1.5 border-t border-b border-dashed border-black text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Room Details</p>
-              <div className="flex justify-between"><span>Room Number:</span> <span className="font-bold">Room {confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}</span></div>
-              <div className="flex justify-between"><span>Check-in:</span> <span>{new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkInDate || confirmedBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-              <div className="flex justify-between"><span>Check-out:</span> <span>{new Date(confirmedBooking.checkOutDate).toLocaleDateString("en-IN")} {new Date(confirmedBooking.checkOutDate).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-              <div className="flex justify-between"><span>Stay Duration:</span> <span>{noOfDays} Days</span></div>
-              <div className="flex justify-between"><span>Tariff (Per Day):</span> <span>₹{roomTariff}</span></div>
-            </div>
-
-            <div className="space-y-1 py-1.5 text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Payment Details</p>
-              <div className="flex justify-between"><span>Total Accom. cost:</span> <span>₹ {totalAmount}.00</span></div>
-              <div className="flex justify-between"><span>Advance Amount Paid:</span> <span className="font-bold">₹ {advancePaid}.00</span></div>
-              {balanceAmount < 0 ? (
-                <div className="flex justify-between font-bold border-t border-dashed border-black pt-1">
-                  <span>Refund Due at Checkout:</span>
-                  <span>₹ {Math.abs(balanceAmount)}.00</span>
-                </div>
-              ) : (
-                <div className="flex justify-between font-bold border-t border-dashed border-black pt-1">
-                  <span>Balance Amount Due:</span>
-                  <span>₹ {balanceAmount}.00</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1 py-2.5 my-2 border-t border-b border-dashed border-black text-[11px]">
-              <div className="flex justify-between"><span>Payment Mode:</span> <span className="font-bold">{paymentMethod}</span></div>
-              <div className="flex justify-between"><span>Received Amount:</span> <span className="font-bold">₹ {paymentReceived}.00</span></div>
-              {paymentNote && <p className="text-[9px] italic">Note: {paymentNote}</p>}
-            </div>
-
-            {/* Verification QR Code in Print */}
-            <div className="flex flex-col items-center justify-center py-2 border-t border-dashed border-black">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `Kalyani Guest House Check-In\nReceipt No: ${confirmedBooking.receiptNo}\nGuest Name: ${guestName}\nRoom Number: ${confirmedBooking.roomNumbers || selectedRooms.map(r => r.roomNumber).join(", ")}\nAdvance Paid: Rs. ${advancePaid}`
-                )}`} 
-                alt="Receipt QR Code"
-                className="w-24 h-24 border border-black p-1 bg-white"
-              />
-              <p className="text-[8px] mt-1 uppercase tracking-wider font-bold">Scan to Verify Stay</p>
-            </div>
-
-            <div className="text-center py-4 space-y-2 border-t border-black pt-4">
-              <p className="text-xs font-bold leading-tight">Thank You!</p>
-              <p className="text-[9px] font-semibold italic leading-tight">Have a Safe & Blessed Stay</p>
-              <div className="w-48 h-8 mx-auto bg-black flex items-center justify-center text-white text-[9px] font-bold mt-4 tracking-[6px] border border-black">
-                |||RCP{confirmedBooking.receiptNo.substring(3)}|||
-              </div>
-              <p className="text-[8px] text-gray-500 font-semibold mt-1">RCP{confirmedBooking.receiptNo.substring(3)}</p>
-              <p className="text-[7px] text-gray-500 leading-tight border-t border-dashed border-gray-400 pt-2">This is a computer generated receipt.<br />No signature required.</p>
-            </div>
+          <div className="print-only a4-print-wrapper">
+            {renderA4Receipt(confirmedBooking, "devotee")}
+            <div className="a4-divider"></div>
+            {renderA4Receipt(confirmedBooking, "office")}
           </div>
         </PrintPortal>
       )}

@@ -5,8 +5,10 @@ import { Printer, Bell, ChevronDown, User, ShieldAlert, LogOut, X } from "lucide
 import { useRouter } from "next/navigation";
 import { getBookings } from "@/app/actions";
 import Link from "next/link";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function Header() {
+  const { language, t } = useLanguage();
   const router = useRouter();
   const [time, setTime] = useState<string>("");
   const [userDropdown, setUserDropdown] = useState(false);
@@ -15,8 +17,31 @@ export default function Header() {
   const [activeUser, setActiveUser] = useState({
     name: "Reception Desk",
     role: "RECEPTION",
-    avatar: "/avatar.png"
+    building: "Kalyani Guest House",
+    username: "kalyani_reception"
   });
+
+  // Load user session from cookies
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : "";
+    };
+    
+    const username = getCookie("guesthouse_username");
+    const role = getCookie("guesthouse_role");
+    const building = getCookie("guesthouse_building");
+    const name = getCookie("guesthouse_name");
+    
+    if (username) {
+      setActiveUser({
+        name: name || (role === "ADMIN" ? "Office Administrator" : "Reception Desk"),
+        role: role || "RECEPTION",
+        building: building || "Kalyani Guest House",
+        username: username
+      });
+    }
+  }, []);
 
   // Fetch active stays ending soon
   useEffect(() => {
@@ -88,8 +113,12 @@ export default function Header() {
           />
         </div>
         <div>
-          <h1 className="text-lg font-bold tracking-wide leading-none">Siddaganga Mata Tumkur</h1>
-          <p className="text-xs text-orange-100 font-medium">Kalyani Guest House</p>
+          <h1 className="text-lg font-bold tracking-wide leading-none">{t("templeName")}</h1>
+          <p className="text-xs text-orange-100 font-medium">
+            {activeUser.building === "Yathri Nivasa"
+              ? (language === "kn" ? "ಯಾತ್ರಿ ನಿವಾಸ" : "Yathri Nivasa")
+              : t("guestHouseName")}
+          </p>
         </div>
       </div>
 
@@ -156,7 +185,8 @@ export default function Header() {
                     setActiveUser({
                       name: "Office Administrator",
                       role: "ADMIN",
-                      avatar: ""
+                      building: activeUser.building,
+                      username: "admin"
                     });
                     setUserDropdown(false);
                   }}
@@ -170,7 +200,8 @@ export default function Header() {
                     setActiveUser({
                       name: "Reception Desk",
                       role: "RECEPTION",
-                      avatar: ""
+                      building: activeUser.building,
+                      username: "reception"
                     });
                     setUserDropdown(false);
                   }}

@@ -234,3 +234,36 @@ export async function clearAllSystemData() {
     throw new Error("Failed to clear system data.");
   }
 }
+
+export async function getFullDatabaseBackup() {
+  try {
+    return await dbService.getFullDatabaseBackup();
+  } catch (error) {
+    console.error("Failed to export full database backup:", error);
+    throw new Error("Failed to export full database backup.");
+  }
+}
+
+export async function updateGuestPhoto(guestId: string, photoUrl: string) {
+  try {
+    const g = await dbService.updateGuestPhoto(guestId, photoUrl);
+    revalidatePath(`/guests/${guestId}`);
+    revalidatePath("/guests");
+    return g;
+  } catch (error) {
+    console.error("Failed to update guest profile photo:", error);
+    throw new Error("Failed to update guest profile photo.");
+  }
+}
+
+export async function updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: string) {
+  try {
+    const g = await dbService.updateGuestIdCardPhoto(guestId, idCardPhotoUrl);
+    revalidatePath(`/guests/${guestId}`);
+    revalidatePath("/guests");
+    return g;
+  } catch (error) {
+    console.error("Failed to update guest ID card photo:", error);
+    throw new Error("Failed to update guest ID card photo.");
+  }
+}

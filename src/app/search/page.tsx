@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, ShieldAlert, User, Bed, CreditCard, FolderSync } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -11,22 +11,43 @@ import { useToast } from "@/hooks/use-toast";
 export default function GlobalSearchPage() {
   const toast = useToast();
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<{
     guests: any[];
     bookings: any[];
   }>({ guests: [], bookings: [] });
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // Debounced search for suggestions list
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const delay = setTimeout(async () => {
+      try {
+        const matches = await searchGuest(query);
+        setSuggestions(matches.slice(0, 6));
+      } catch (err) {
+        console.error("Suggestions fetch error:", err);
+      }
+    }, 250);
+
+    return () => clearTimeout(delay);
+  }, [query]);
+
+  const handleSearch = async (e?: React.FormEvent, customQuery?: string) => {
+    if (e) e.preventDefault();
+    const searchQuery = customQuery !== undefined ? customQuery : query;
+    if (!searchQuery.trim()) return;
 
     setIsSearching(true);
+    setSuggestions([]);
     try {
-      const guestResults = await searchGuest(query);
+      const guestResults = await searchGuest(searchQuery);
       
       const allBookings = await getBookings();
-      const cleanQuery = query.toLowerCase().trim();
+      const cleanQuery = searchQuery.toLowerCase().trim();
       const bookingsResults = allBookings.filter((b: any) => 
         b.receiptNo.toLowerCase().includes(cleanQuery) ||
         (b.room?.roomNumber && b.room.roomNumber.toLowerCase().includes(cleanQuery)) ||
@@ -70,19 +91,45 @@ export default function GlobalSearchPage() {
 
       {/* Form */}
       <Card>
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            required
-            placeholder="Type Guest Name, Phone, Aadhaar, Receipt ID (e.g. Ramesh, 98865, RCP1248)..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold"
-          />
+        <form onSubmit={(e) => handleSearch(e)} className="flex gap-2 relative">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              required
+              placeholder="Type Guest Name, Phone, Aadhaar, Receipt ID (e.g. Ramesh, 98865, RCP1248)..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold shadow-sm"
+            />
+            {suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto divide-y divide-gray-50">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      setQuery(s.name);
+                      setSuggestions([]);
+                      handleSearch(undefined, s.name);
+                    }}
+                    className="w-full text-left px-4 py-3 text-xs text-dark-brown font-semibold hover:bg-orange-50/50 flex justify-between items-center transition-colors cursor-pointer"
+                  >
+                    <div>
+                      <span className="font-extrabold text-dark-brown">{s.name}</span>
+                      <span className="text-[10px] text-gray-400 font-semibold ml-2">({s.phone})</span>
+                    </div>
+                    <span className="text-[9px] text-brand-orange bg-orange-50/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      {s.district}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isSearching}
-            className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+            className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
           >
             <Search size={16} />
             {isSearching ? "Searching..." : "Search"}
