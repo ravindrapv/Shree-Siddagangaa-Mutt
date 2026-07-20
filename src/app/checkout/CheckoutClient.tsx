@@ -19,6 +19,7 @@ import { getBookingByReceipt, checkoutBooking } from "@/app/actions";
 import Link from "next/link";
 import PrintPortal from "@/components/ui/PrintPortal";
 import Modal from "@/components/ui/Modal";
+import { renderA4Receipt } from "../bookings/BookingsClient";
 
 export default function CheckoutClient() {
   const router = useRouter();
@@ -320,100 +321,35 @@ export default function CheckoutClient() {
                   </div>
 
                   {/* Checkout Receipt Preview Modal */}
-                  <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title="Checkout Bill Receipt Preview" size="sm">
-                    <div className="bg-gray-100 p-4 rounded-xl flex justify-center no-print">
-                      <div className="bg-white border border-gray-200 shadow-md p-6 max-w-sm w-full font-mono text-[11px] text-black space-y-4 rounded-sm relative leading-relaxed">
-                        {/* Ticket Notches */}
-                        <div className="absolute top-1/2 -left-1.5 w-3 h-3 bg-gray-100 rounded-full border-r border-gray-200"></div>
-                        <div className="absolute top-1/2 -right-1.5 w-3 h-3 bg-gray-100 rounded-full border-l border-gray-200"></div>
-
-                        <div className="text-center mb-4 flex flex-col items-center border-b border-dashed border-gray-200 pb-3">
-                          {/* Three Swamiji Photos */}
-                          <div className="flex justify-center gap-3 mb-2">
-                            <div className="flex flex-col items-center">
-                              <img src="/swami-senior.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Dr. S. Swamiji" />
-                              <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Dr. Sri S. Swamiji</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <img src="/swami-current.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Sri S. Swamiji" />
-                              <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Sri S. Swamiji</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <img src="/swami-assistant.jpg" className="w-9 h-9 rounded-full object-cover object-top border border-brand-orange/30" alt="Sri Swamiji" />
-                              <span className="text-[6px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Swamiji</span>
-                            </div>
-                          </div>
-                          <h2 className="text-xs font-extrabold uppercase tracking-wide">Sri Siddaganga Mutt</h2>
-                          <p className="text-[9px] text-brand-orange font-bold uppercase leading-tight">Kalyani Guest House</p>
-                          <p className="text-[8px] text-gray-400">Mutt Road, Tumkur, Karnataka - 572104</p>
-                        </div>
-
-                        <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                          <div className="flex justify-between"><span>Receipt No:</span><span className="font-bold">{activeBooking.receiptNo}</span></div>
-                          <div className="flex justify-between"><span>Date:</span><span>{new Date().toLocaleString("en-IN")}</span></div>
-                          <div className="flex justify-between"><span>Status:</span><span className="font-bold text-red-600">CHECKED OUT</span></div>
-                        </div>
-
-                        <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                          <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Devotee Details</p>
-                          <div className="flex justify-between"><span>Name:</span><span className="font-bold">{activeBooking.guest?.name}</span></div>
-                          <div className="flex justify-between"><span>Phone:</span><span>{activeBooking.guest?.phone}</span></div>
-                          <div className="flex justify-between"><span>ID Card:</span><span>{activeBooking.guest?.idType} ({activeBooking.guest?.idNumber})</span></div>
-                        </div>
-
-                        <div className="space-y-1 text-[10px] border-b border-dashed border-gray-200 pb-3">
-                          <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Room Details</p>
-                          <div className="flex justify-between"><span>Room Number:</span><span className="font-bold">Room {activeBooking.room?.roomNumber}</span></div>
-                          <div className="flex justify-between"><span>Duration:</span><span>{activeBooking.noOfDays} Days</span></div>
-                          <div className="flex justify-between"><span>Check-in Time:</span><span>{new Date(activeBooking.checkInDate || activeBooking.createdAt).toLocaleDateString("en-IN")} {new Date(activeBooking.checkInDate || activeBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-                          <div className="flex justify-between"><span>Check-out Time:</span><span>{new Date().toLocaleDateString("en-IN")} {new Date().toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-                        </div>
-
-                        <div className="space-y-1 text-[10px]">
-                          <p className="font-bold uppercase tracking-wide text-brand-orange text-[9px]">Settle Summary</p>
-                          <div className="flex justify-between"><span>Accom. charges:</span><span>₹{activeBooking.totalAmount}.00</span></div>
-                          <div className="flex justify-between"><span>Advance Paid:</span><span>- ₹{activeBooking.advancePaid}.00</span></div>
-                          <div className="flex justify-between"><span>Additional Fees:</span><span>+ ₹{additionalCharges}.00</span></div>
-                          {chargeNotes && <p className="text-[9px] italic text-gray-400">({chargeNotes})</p>}
-                          {finalBalanceDue < 0 ? (
-                            <div className="flex justify-between font-bold text-xs pt-1 border-t border-dashed border-gray-150 mt-1 text-emerald-600">
-                              <span>Refund Given (Cash):</span>
-                              <span>₹{Math.abs(finalBalanceDue)}.00</span>
-                            </div>
-                          ) : (
-                            <div className="flex justify-between font-bold text-xs pt-1 border-t border-dashed border-gray-150 mt-1">
-                              <span>Settle Amount ({paymentMethod}):</span>
-                              <span>₹{finalBalanceDue}.00</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Verification QR Code */}
-                        <div className="flex flex-col items-center justify-center pt-2 border-t border-dashed border-gray-200">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                              `Kalyani Guest House Check-Out\nReceipt No: ${activeBooking.receiptNo}\nGuest Name: ${activeBooking.guest?.name}\nRoom Number: ${activeBooking.room?.roomNumber}\nSettle Amount: Rs. ${finalBalanceDue}`
-                            )}`}
-                            alt="Receipt QR Code"
-                            className="w-24 h-24 border border-gray-150 p-1 bg-white"
-                          />
-                          <p className="text-[8px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Scan to Verify Stay</p>
-                        </div>
-
-                        <div className="text-center pt-3 border-t border-dashed border-gray-200 text-[9px] text-gray-500 font-semibold italic">
-                          Have a Blessed & Safe Journey!
-                        </div>
+                  <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title="Checkout Bill Receipt Preview" size="lg">
+                    <div className="bg-gray-100 p-4 rounded-xl flex flex-col items-center gap-4 no-print overflow-y-auto max-h-[70vh]">
+                      <div className="scale-90 origin-top shadow-lg bg-white rounded-md border border-gray-300">
+                        {renderA4Receipt({
+                          ...activeBooking,
+                          status: "CHECKED_OUT",
+                          checkOutDate: new Date().toISOString()
+                        }, "devotee", Number(additionalCharges), chargeNotes)}
+                      </div>
+                      <div className="w-[194mm] border-t border-dashed border-gray-400 text-center py-2 text-xs font-bold text-gray-500">
+                        ✂ ಕತ್ತರಿಸುವ ಗೆರೆ (Cut Here) ✂
+                      </div>
+                      <div className="scale-90 origin-top shadow-lg bg-white rounded-md border border-gray-300">
+                        {renderA4Receipt({
+                          ...activeBooking,
+                          status: "CHECKED_OUT",
+                          checkOutDate: new Date().toISOString()
+                        }, "office", Number(additionalCharges), chargeNotes)}
                       </div>
                     </div>
-                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100 no-print">
                       <button
                         onClick={() => {
                           setIsPreviewOpen(false);
                           handlePrint();
                         }}
-                        className="bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                        className="bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-md"
                       >
-                        <Printer size={14} /> Print Receipt
+                        <Printer size={14} /> Print A4 Receipt (2 Copies)
                       </button>
                       <button
                         onClick={() => setIsPreviewOpen(false)}
@@ -498,114 +434,23 @@ export default function CheckoutClient() {
       </div>
 
       {/* -------------------------------------------------------------
-          PRINTABLE THERMAL CHECK-OUT FINAL BILL RECEIPT
+          PRINTABLE A4 CHECK-OUT FINAL BILL RECEIPT (2 COPIES)
           Rendered ONLY when executing a print job
           ------------------------------------------------------------- */}
       {activeBooking && (
         <PrintPortal>
-          <div className="print-only thermal-receipt text-black font-mono">
-            <div className="text-center mb-3 flex flex-col items-center">
-              {/* Three Swamiji Photos */}
-              <div className="flex justify-center gap-3 mb-2.5">
-                <div className="flex flex-col items-center">
-                  <img src="/swami-senior.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Dr. S. Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Dr. Sri S. Swamiji</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <img src="/swami-current.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Sri S. Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Sri S. Swamiji</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <img src="/swami-assistant.jpg" className="w-8 h-8 rounded-full object-cover object-top border border-black" alt="Sri Swamiji" />
-                  <span className="text-[5.5px] font-bold mt-0.5 whitespace-nowrap leading-none">Sri Swamiji</span>
-                </div>
-              </div>
-
-              <h2 className="text-[11px] font-black tracking-wider uppercase leading-tight">Sri Siddaganga Mutt</h2>
-              <p className="text-[9px] font-extrabold text-brand-orange uppercase leading-tight">Kalyani Guest House</p>
-              <p className="text-[7.5px] text-gray-600 font-semibold leading-tight">Mutt Road, Tumkur, Karnataka - 572104</p>
-            </div>
-
-            <div className="border-t border-b border-dashed border-black py-2.5 my-2 space-y-1 text-[11px]">
-              <div className="flex justify-between">
-                <span>Receipt No:</span>
-                <span className="font-bold">{activeBooking.receiptNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Date:</span>
-                <span>{new Date().toLocaleString("en-IN", { hour12: true })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Receipt Type:</span>
-                <span className="font-bold">FINAL BILL & CHECK-OUT</span>
-              </div>
-            </div>
-
-            <div className="space-y-1 py-1.5 text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Guest Details</p>
-              <div className="flex justify-between"><span>Guest Name:</span> <span className="font-bold">{activeBooking.guest?.name}</span></div>
-              <div className="flex justify-between"><span>Phone Number:</span> <span>{activeBooking.guest?.phone}</span></div>
-              <div className="flex justify-between"><span>ID Card:</span> <span>{activeBooking.guest?.idType} ({activeBooking.guest?.idNumber})</span></div>
-              <div className="flex justify-between"><span>No. of Persons:</span> <span>{activeBooking.noOfPersons}</span></div>
-              <p className="text-[10px] truncate max-w-[280px]">Address: {activeBooking.guest?.address}</p>
-            </div>
-
-            <div className="space-y-1 py-2.5 my-1.5 border-t border-b border-dashed border-black text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Room Details</p>
-              <div className="flex justify-between"><span>Room Number:</span> <span className="font-bold">Room {activeBooking.room?.roomNumber}</span></div>
-              <div className="flex justify-between"><span>Check-in:</span> <span>{new Date(activeBooking.checkInDate || activeBooking.createdAt).toLocaleDateString("en-IN")} {new Date(activeBooking.checkInDate || activeBooking.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-              <div className="flex justify-between"><span>Check-out:</span> <span>{new Date().toLocaleDateString("en-IN")} {new Date().toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-              <div className="flex justify-between"><span>Stay Duration:</span> <span>{activeBooking.noOfDays} Days</span></div>
-              <div className="flex justify-between"><span>Tariff (Per Day):</span> <span>₹{activeBooking.room?.ratePerDay}</span></div>
-            </div>
-
-            <div className="space-y-1 py-1.5 text-[11px]">
-              <p className="text-[10px] font-bold border-b border-black pb-0.5 uppercase tracking-wide">Financial Ledger</p>
-              <div className="flex justify-between"><span>Total Accom. cost:</span> <span>₹ {activeBooking.totalAmount}.00</span></div>
-              <div className="flex justify-between"><span>Advance Paid:</span> <span>₹ {activeBooking.advancePaid}.00</span></div>
-              <div className="flex justify-between"><span>Additional Charges:</span> <span>₹ {additionalCharges}.00</span></div>
-              {chargeNotes && <p className="text-[9px] italic ml-2">Extra charges note: {chargeNotes}</p>}
-              <div className="flex justify-between font-bold border-t border-dashed border-black pt-1">
-                <span>Grand Total Settled:</span>
-                <span>₹ {activeBooking.totalAmount + Number(additionalCharges)}.00</span>
-              </div>
-            </div>
-
-            {finalBalanceDue < 0 ? (
-              <div className="space-y-1 py-2.5 my-2 border-t border-b border-dashed border-black text-[11px]">
-                <div className="flex justify-between"><span>Balance Settlement Mode:</span> <span className="font-bold">CASH REFUND</span></div>
-                <div className="flex justify-between"><span>Amount Returned:</span> <span className="font-bold">₹ {Math.abs(finalBalanceDue)}.00</span></div>
-                {paymentNote && <p className="text-[9px] italic">Note: {paymentNote}</p>}
-              </div>
-            ) : (
-              <div className="space-y-1 py-2.5 my-2 border-t border-b border-dashed border-black text-[11px]">
-                <div className="flex justify-between"><span>Balance Settlement Mode:</span> <span className="font-bold">{paymentMethod}</span></div>
-                <div className="flex justify-between"><span>Amount Received:</span> <span className="font-bold">₹ {finalBalanceDue}.00</span></div>
-                {paymentNote && <p className="text-[9px] italic">Note: {paymentNote}</p>}
-              </div>
-            )}
-
-            {/* Verification QR Code in Print */}
-            <div className="flex flex-col items-center justify-center py-2 border-t border-dashed border-black">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `Kalyani Guest House Check-Out\nReceipt No: ${activeBooking.receiptNo}\nGuest Name: ${activeBooking.guest?.name}\nRoom Number: ${activeBooking.room?.roomNumber}\nSettle Amount: Rs. ${finalBalanceDue}`
-                )}`}
-                alt="Receipt QR Code"
-                className="w-24 h-24 border border-black p-1 bg-white"
-              />
-              <p className="text-[8px] mt-1 uppercase tracking-wider font-bold">Scan to Verify Stay</p>
-            </div>
-
-            <div className="text-center py-4 space-y-2 border-t border-black pt-4">
-              <p className="text-xs font-bold leading-tight">Thank You!</p>
-              <p className="text-[9px] font-semibold italic leading-tight">Have a Safe & Blessed Journey. Visit Again.</p>
-              <div className="w-48 h-8 mx-auto bg-black flex items-center justify-center text-white text-[9px] font-bold mt-4 tracking-[6px] border border-black">
-                |||RCP{activeBooking.receiptNo.substring(3)}|||
-              </div>
-              <p className="text-[8px] text-gray-500 font-semibold mt-1">RCP{activeBooking.receiptNo.substring(3)}</p>
-              <p className="text-[7px] text-gray-500 leading-tight border-t border-dashed border-gray-400 pt-2">This is a computer generated receipt.<br />No signature required.</p>
-            </div>
+          <div className="print-only a4-print-wrapper">
+            {renderA4Receipt({
+              ...activeBooking,
+              status: "CHECKED_OUT",
+              checkOutDate: new Date().toISOString()
+            }, "devotee", Number(additionalCharges), chargeNotes)}
+            <div className="a4-divider"></div>
+            {renderA4Receipt({
+              ...activeBooking,
+              status: "CHECKED_OUT",
+              checkOutDate: new Date().toISOString()
+            }, "office", Number(additionalCharges), chargeNotes)}
           </div>
         </PrintPortal>
       )}

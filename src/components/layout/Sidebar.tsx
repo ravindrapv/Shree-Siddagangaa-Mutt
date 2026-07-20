@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getDashboardStats } from "@/app/actions";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
     total: 24650,
@@ -68,18 +70,18 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   }, []);
 
   const menuItems = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "New Booking", href: "/bookings/new", icon: PlusCircle },
-    { name: "Bookings", href: "/bookings", icon: CalendarDays },
-    { name: "Guests", href: "/guests", icon: Users },
-    { name: "Rooms", href: "/rooms", icon: Bed },
-    { name: "Payments", href: "/payments", icon: IndianRupee },
-    { name: "Check Out", href: "/checkout", icon: LogOut },
-    { name: "Reports", href: "/reports", icon: FileBarChart2 },
-    { name: "Search", href: "/search", icon: Search },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Users", href: "/users", icon: UserCog },
-    { name: "Backup", href: "/backup", icon: Database },
+    { name: "Dashboard", translationKey: "dashboard", href: "/", icon: LayoutDashboard },
+    { name: "New Booking", translationKey: "newBooking", href: "/bookings/new", icon: PlusCircle },
+    { name: "Active Stays", translationKey: "bookings", href: "/bookings", icon: CalendarDays },
+    { name: "Guest Directory", translationKey: "guests", href: "/guests", icon: Users },
+    { name: "Rooms List", translationKey: "rooms", href: "/rooms", icon: Bed },
+    { name: "Payment Logs", translationKey: "payments", href: "/payments", icon: IndianRupee },
+    { name: "Check Out", translationKey: "checkout", href: "/checkout", icon: LogOut },
+    { name: "Reports", translationKey: "reports", href: "/reports", icon: FileBarChart2 },
+    { name: "Search", translationKey: "searchPlaceholder", href: "/search", icon: Search },
+    { name: "Settings", translationKey: "settings", href: "/settings", icon: Settings },
+    { name: "Users", translationKey: "users", href: "/users", icon: UserCog },
+    { name: "Backup", translationKey: "backup", href: "/backup", icon: Database },
   ];
 
   return (
@@ -119,7 +121,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               }`}
             >
               <Icon size={18} className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-400"}`} />
-              {(!collapsed || (isMobile && !collapsed)) && <span className="truncate">{item.name}</span>}
+              {(!collapsed || (isMobile && !collapsed)) && <span className="truncate">{t(item.translationKey)}</span>}
             </Link>
           );
         })}
@@ -129,7 +131,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       {(!collapsed || (isMobile && !collapsed)) && (
         <div className="p-4 mx-3 mb-6 bg-dark-brown-light rounded-xl border border-gray-800 shadow-lg flex-shrink-0">
           <div className="flex items-center justify-between text-xs text-green-400 font-semibold mb-1">
-            <span>Today's Collection</span>
+            <span>{t("todaysCollection")}</span>
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
           </div>
           <div className="text-xl font-bold text-white mb-3">

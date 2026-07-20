@@ -58,6 +58,7 @@ model Guest {
   idNumber         String    @unique
   emergencyContact String?
   photoUrl         String?
+  idCardPhotoUrl   String?
   familyMembers    Json?     // Array of family member details
   bookings         Booking[]
   createdAt        DateTime  @default(now())

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Users, 
@@ -44,8 +44,26 @@ export default function DashboardClient({ initialStats }: DashboardClientProps) 
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Debounced search for dashboard lookup suggestions
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchSuggestions([]);
+      return;
+    }
+    const delay = setTimeout(async () => {
+      try {
+        const results = await searchGuest(searchQuery);
+        setSearchSuggestions(results.slice(0, 5));
+      } catch (err) {
+        console.error(err);
+      }
+    }, 250);
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
 
   const { stats, recentCheckins, recentPayments, upcomingCheckouts, floorStatus } = statsData;
 
@@ -655,19 +673,48 @@ export default function DashboardClient({ initialStats }: DashboardClientProps) 
         title="Find Guest Register Profile"
       >
         <div className="space-y-6">
-          <form onSubmit={handleSearchSubmit} className="flex gap-2">
-            <input
-              type="text"
-              required
-              placeholder="Search by Name, Phone, Aadhaar..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold"
-            />
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 relative">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                required
+                placeholder="Search by Name, Phone, Aadhaar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold shadow-sm"
+              />
+              {searchSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-50">
+                  {searchSuggestions.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(s.name);
+                        setSearchSuggestions([]);
+                        // Directly trigger search
+                        setTimeout(() => {
+                          searchGuest(s.name).then(res => setSearchResults(res));
+                        }, 50);
+                      }}
+                      className="w-full text-left px-4 py-3 text-xs text-dark-brown font-semibold hover:bg-orange-50/50 flex justify-between items-center transition-colors cursor-pointer"
+                    >
+                      <div>
+                        <span className="font-extrabold text-dark-brown">{s.name}</span>
+                        <span className="text-[10px] text-gray-400 font-semibold ml-2">({s.phone})</span>
+                      </div>
+                      <span className="text-[9px] text-brand-orange bg-orange-50/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        {s.district}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               type="submit"
               disabled={isSearching}
-              className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-5 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-60"
+              className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-5 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-60 flex-shrink-0"
             >
               {isSearching ? "Searching..." : "Search"}
             </button>

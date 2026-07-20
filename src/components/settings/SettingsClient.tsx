@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Settings, Save, Database, Printer, Building, Phone, Trash2 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import { useToast } from "@/hooks/use-toast";
-import { updateSetting, clearAllSystemData } from "@/app/actions";
+import { updateSetting, clearAllSystemData, getFullDatabaseBackup } from "@/app/actions";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface SettingsClientProps {
   initialSettings: any[];
@@ -12,6 +13,7 @@ interface SettingsClientProps {
 
 export default function SettingsClient({ initialSettings }: SettingsClientProps) {
   const toast = useToast();
+  const { language, setLanguage, t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
   // Find setting values
@@ -23,6 +25,15 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
   const [templeAddress, setTempleAddress] = useState(getVal("templeAddress", "Siddaganga Mutt Road, Tumkur, Karnataka, India - 572104"));
   const [contactNumber, setContactNumber] = useState(getVal("contactNumber", "+91 816 2282247"));
   const [receiptFooter, setReceiptFooter] = useState(getVal("receiptFooter", "This is a computer-generated receipt. Thank you for your support. Have a safe & blessed stay."));
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : "";
+    };
+    setIsAdmin(getCookie("guesthouse_role") === "ADMIN");
+  }, []);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -39,13 +50,14 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
     });
   };
 
-  const handleDownloadBackup = () => {
+  const handleDownloadBackup = async () => {
     try {
-      // Create mockup database json export
+      // Fetch full database records (guests, bookings, payments, audit logs, settings)
+      const dbData = await getFullDatabaseBackup();
       const backupData = {
         timestamp: new Date().toISOString(),
         backupType: "FULL_SYSTEM_DB_BACKUP",
-        settings: { templeName, templeAddress, contactNumber, receiptFooter }
+        ...dbData
       };
 
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -59,7 +71,7 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
       link.click();
       document.body.removeChild(link);
 
-      toast.success("System backup snapshot downloaded successfully");
+      toast.success("Full system database backup downloaded successfully");
     } catch (err) {
       toast.error("Backup creation failed");
     }
@@ -167,6 +179,38 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
 
         {/* Sidebar utility controls */}
         <div className="space-y-6">
+          <Card className="border border-brand-orange/20 bg-brand-orange-light/5">
+            <CardTitle className="mb-4 flex items-center gap-2">
+              <Settings size={18} className="text-brand-orange" />
+              {t("langSettings")}
+            </CardTitle>
+            <p className="text-xs text-gray-605 font-medium leading-relaxed mb-4">
+              {t("langSelectDesc")}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLanguage("en")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  language === "en"
+                    ? "bg-brand-orange border-brand-orange text-white shadow-md font-extrabold"
+                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => setLanguage("kn")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  language === "kn"
+                    ? "bg-brand-orange border-brand-orange text-white shadow-md font-extrabold"
+                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                ಕನ್ನಡ (Kannada)
+              </button>
+            </div>
+          </Card>
+
           <Card className="border border-orange-100 bg-orange-50/10">
             <CardTitle className="mb-4 flex items-center gap-2">
               <Database size={18} className="text-brand-orange" />
@@ -183,18 +227,22 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
               Create DB Backup Snapshot
             </button>
 
-            <hr className="my-4 border-orange-100/50" />
-            <p className="text-xs text-red-950/80 font-medium leading-relaxed mb-4 font-bold">
-              Dangerous Area: Reset the entire system. This deletes all guest profiles, stay bookings, payments, audit logs, and marks all rooms as Vacant/Available.
-            </p>
-            <button
-              onClick={handleClearSystemData}
-              disabled={isPending}
-              className="w-full bg-red-600 hover:bg-red-750 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              <Trash2 size={14} />
-              Clear All Data & Reset Rooms
-            </button>
+            {isAdmin && (
+              <>
+                <hr className="my-4 border-orange-100/50" />
+                <p className="text-xs text-red-950/80 font-medium leading-relaxed mb-4 font-bold">
+                  Dangerous Area: Reset the entire system. This deletes all guest profiles, stay bookings, payments, audit logs, and marks all rooms as Vacant/Available.
+                </p>
+                <button
+                  onClick={handleClearSystemData}
+                  disabled={isPending}
+                  className="w-full bg-red-600 hover:bg-red-750 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Clear All Data & Reset Rooms
+                </button>
+              </>
+            )}
           </Card>
         </div>
 

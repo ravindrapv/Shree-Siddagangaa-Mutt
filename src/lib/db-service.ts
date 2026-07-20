@@ -18,6 +18,7 @@ export interface Guest {
   idNumber: string;
   emergencyContact?: string | null;
   photoUrl?: string | null;
+  idCardPhotoUrl?: string | null;
   familyMembers?: any; // JSON array of family members
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -513,6 +514,50 @@ export const dbService = {
     } as unknown as Guest;
   },
 
+  async updateGuestPhoto(guestId: string, photoUrl: string): Promise<Guest> {
+    if (isDemoMode()) {
+      const db = readMockDB();
+      const guest = db.guests.find(g => g.id === guestId);
+      if (!guest) {
+        throw new Error("Guest profile not found");
+      }
+      guest.photoUrl = photoUrl;
+      guest.updatedAt = new Date().toISOString();
+      writeMockDB(db);
+      return guest;
+    }
+    const g = await prisma.guest.update({
+      where: { id: guestId },
+      data: { photoUrl }
+    });
+    return {
+      ...g,
+      familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
+    } as unknown as Guest;
+  },
+
+  async updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: string): Promise<Guest> {
+    if (isDemoMode()) {
+      const db = readMockDB();
+      const guest = db.guests.find(g => g.id === guestId);
+      if (!guest) {
+        throw new Error("Guest profile not found");
+      }
+      guest.idCardPhotoUrl = idCardPhotoUrl;
+      guest.updatedAt = new Date().toISOString();
+      writeMockDB(db);
+      return guest;
+    }
+    const g = await prisma.guest.update({
+      where: { id: guestId },
+      data: { idCardPhotoUrl }
+    });
+    return {
+      ...g,
+      familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
+    } as unknown as Guest;
+  },
+
   // --- ROOMS ---
   async getRooms(): Promise<Room[]> {
     if (isDemoMode()) {
@@ -899,7 +944,7 @@ export const dbService = {
 
           const rIdx = db.rooms.findIndex(r => r.id === b.roomId);
           if (rIdx !== -1) {
-            db.rooms[rIdx].status = "CLEANING";
+            db.rooms[rIdx].status = "AVAILABLE";
             db.rooms[rIdx].updatedAt = new Date().toISOString();
           }
 
@@ -907,7 +952,7 @@ export const dbService = {
             id: "log_" + Math.random().toString(36).substr(2, 9),
             userId: "system-user",
             action: "CHECKOUT",
-            details: `Booking ${b.receiptNo} checked out. Room ${db.rooms[rIdx]?.roomNumber || b.roomId} set to CLEANING.`,
+            details: `Booking ${b.receiptNo} checked out. Room ${db.rooms[rIdx]?.roomNumber || b.roomId} set to AVAILABLE.`,
             timestamp: new Date().toISOString()
           });
         }
@@ -974,7 +1019,7 @@ export const dbService = {
 
         await tx.room.update({
           where: { id: b.roomId },
-          data: { status: "CLEANING" }
+          data: { status: "AVAILABLE" }
         });
       }
 
@@ -999,7 +1044,7 @@ export const dbService = {
 
       // Free old room
       const oldRoomIdx = db.rooms.findIndex(r => r.id === oldRoomId);
-      if (oldRoomIdx !== -1) db.rooms[oldRoomIdx].status = "CLEANING";
+      if (oldRoomIdx !== -1) db.rooms[oldRoomIdx].status = "AVAILABLE";
 
       // Occupy new room
       const newRoomIdx = db.rooms.findIndex(r => r.id === newRoomId);
@@ -1027,7 +1072,7 @@ export const dbService = {
       });
       await tx.room.update({
         where: { id: b.roomId },
-        data: { status: "CLEANING" }
+        data: { status: "AVAILABLE" }
       });
       await tx.room.update({
         where: { id: newRoomId },
@@ -1185,6 +1230,19 @@ export const dbService = {
       update: { value },
       create: { key, value }
     });
+  },
+
+  async getFullDatabaseBackup(): Promise<any> {
+    if (isDemoMode()) {
+      return readMockDB();
+    }
+    const guests = await prisma.guest.findMany();
+    const rooms = await prisma.room.findMany();
+    const bookings = await prisma.booking.findMany({ include: { guest: true, room: true } });
+    const payments = await prisma.payment.findMany();
+    const auditLogs = await prisma.auditLog.findMany();
+    const settings = await prisma.setting.findMany();
+    return { guests, rooms, bookings, payments, auditLogs, settings };
   },
 
   async clearAllData(): Promise<void> {

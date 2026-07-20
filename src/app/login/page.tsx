@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter();
   const toast = useToast();
 
+  const [selectedBuilding, setSelectedBuilding] = useState<"Kalyani" | "Yathri">("Kalyani");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,22 +23,70 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    // Mimic quick authentication check
     setTimeout(() => {
       setIsLoading(false);
-      toast.success("Welcome back to Shree Siddaganga Mutt Console!");
+
+      // Perform validation check
+      let isValid = false;
+      let detectedRole = "";
+
+      if (selectedBuilding === "Kalyani") {
+        if (username === "kalyani_reception" && password === "KalyaniDesk@Rec44") {
+          isValid = true;
+          detectedRole = "RECEPTION";
+        } else if (username === "kalyani_admin" && password === "SiddhaKalyani#Ad99") {
+          isValid = true;
+          detectedRole = "ADMIN";
+        }
+      } else {
+        if (username === "yathri_reception" && password === "YathriDesk&Rec33") {
+          isValid = true;
+          detectedRole = "RECEPTION";
+        } else if (username === "yathri_admin" && password === "MuttYathri$Ad88") {
+          isValid = true;
+          detectedRole = "ADMIN";
+        }
+      }
+
+      if (!isValid) {
+        toast.error("Invalid operator credentials for the selected guest house.");
+        return;
+      }
+
+      const buildingName = selectedBuilding === "Kalyani" ? "Kalyani Guest House" : "Yathri Nivasa";
+      const name = detectedRole === "ADMIN"
+        ? (selectedBuilding === "Kalyani" ? "Kalyani Admin" : "Yathri Admin")
+        : (selectedBuilding === "Kalyani" ? "Kalyani Reception" : "Yathri Reception");
+
+      // Store context cookies
+      document.cookie = `guesthouse_username=${username}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_role=${detectedRole}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_building=${buildingName}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_name=${name}; path=/; max-age=86400`;
+
+      toast.success(`Welcome back to ${buildingName} stay console!`);
       router.push("/");
     }, 850);
   };
 
   // Helper shortcut for user verification
   const handleAutoFill = (role: "reception" | "admin") => {
-    if (role === "reception") {
-      setUsername("reception_desk");
-      setPassword("reception123");
+    if (selectedBuilding === "Kalyani") {
+      if (role === "reception") {
+        setUsername("kalyani_reception");
+        setPassword("KalyaniDesk@Rec44");
+      } else {
+        setUsername("kalyani_admin");
+        setPassword("SiddhaKalyani#Ad99");
+      }
     } else {
-      setUsername("office_admin");
-      setPassword("admin123");
+      if (role === "reception") {
+        setUsername("yathri_reception");
+        setPassword("YathriDesk&Rec33");
+      } else {
+        setUsername("yathri_admin");
+        setPassword("MuttYathri$Ad88");
+      }
     }
   };
 
@@ -62,7 +111,6 @@ export default function LoginPage() {
                   alt="Dr. Sri Sri Sri Shivakumara Swamiji" 
                 />
               </div>
-              <span className="text-[9px] font-black text-dark-brown mt-1 text-center max-w-[85px] leading-tight">Dr. Shivakumara Swamiji</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand-orange shadow-md bg-white">
@@ -72,7 +120,6 @@ export default function LoginPage() {
                   alt="Sri Sri Sri Siddalinga Swamiji" 
                 />
               </div>
-              <span className="text-[9px] font-black text-dark-brown mt-1 text-center max-w-[85px] leading-tight">Sri Siddalinga Swamiji</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand-orange shadow-md bg-white">
@@ -82,14 +129,49 @@ export default function LoginPage() {
                   alt="Mutt Trustee Swamiji" 
                 />
               </div>
-              <span className="text-[9px] font-black text-dark-brown mt-1 text-center max-w-[85px] leading-tight">Sri Swamiji of Mutt</span>
             </div>
+          </div>
+
+          {/* Building Selector tabs */}
+          <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBuilding("Kalyani");
+                setUsername("");
+                setPassword("");
+              }}
+              className={`flex-1 py-2 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${
+                selectedBuilding === "Kalyani"
+                  ? "bg-brand-orange text-white shadow-md font-extrabold"
+                  : "text-gray-650 hover:text-dark-brown"
+              }`}
+            >
+              Kalyani Guest House
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBuilding("Yathri");
+                setUsername("");
+                setPassword("");
+              }}
+              className={`flex-1 py-2 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${
+                selectedBuilding === "Yathri"
+                  ? "bg-brand-orange text-white shadow-md font-extrabold"
+                  : "text-gray-655 hover:text-dark-brown"
+              }`}
+            >
+              Yathri Nivasa
+            </button>
           </div>
 
           {/* Branding header */}
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-dark-brown tracking-tight">Siddaganga Mata Tumkur</h2>
-            <p className="text-xs text-brand-orange font-bold uppercase mt-1 tracking-wider">Kalyani Guest House</p>
+            <p className="text-xs text-brand-orange font-bold uppercase mt-1 tracking-wider">
+              {selectedBuilding === "Kalyani" ? "Kalyani Guest House" : "Yathri Nivasa"}
+            </p>
           </div>
 
           {/* Form */}

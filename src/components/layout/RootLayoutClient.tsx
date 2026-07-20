@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/hooks/use-toast";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import Shell from "./Shell";
 
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
@@ -10,15 +11,19 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
 
   if (isLoginPage) {
     return (
-      <ToastProvider>
-        {children}
-      </ToastProvider>
+      <LanguageProvider>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </LanguageProvider>
     );
   }
 
   return (
-    <ToastProvider>
-      <Shell>{children}</Shell>
-    </ToastProvider>
+    <LanguageProvider>
+      <ToastProvider>
+        <Shell>{children}</Shell>
+      </ToastProvider>
+    </LanguageProvider>
   );
 }
