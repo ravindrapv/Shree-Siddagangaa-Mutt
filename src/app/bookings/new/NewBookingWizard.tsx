@@ -14,7 +14,8 @@ import {
   Trash2, 
   Printer, 
   Home,
-  PlusCircle
+  PlusCircle,
+  Loader2
 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -947,8 +948,17 @@ export default function NewBookingWizard() {
                     disabled={isPending}
                     className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
                   >
-                    Save Booking & Print Receipt
-                    <ArrowRight size={16} />
+                    {isPending ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        Processing Stay Check-in...
+                      </>
+                    ) : (
+                      <>
+                        Save Booking & Print Receipt
+                        <ArrowRight size={16} />
+                      </>
+                    )}
                   </button>
                 </div>
 

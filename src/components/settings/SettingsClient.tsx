@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { Settings, Save, Database, Printer, Building, Phone, Trash2 } from "lucide-react";
+import { Settings, Save, Database, Printer, Building, Phone, Trash2, Loader2 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import { useToast } from "@/hooks/use-toast";
 import { updateSetting, clearAllSystemData, getFullDatabaseBackup } from "@/app/actions";
@@ -51,30 +51,32 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
   };
 
   const handleDownloadBackup = async () => {
-    try {
-      // Fetch full database records (guests, bookings, payments, audit logs, settings)
-      const dbData = await getFullDatabaseBackup();
-      const backupData = {
-        timestamp: new Date().toISOString(),
-        backupType: "FULL_SYSTEM_DB_BACKUP",
-        ...dbData
-      };
+    startTransition(async () => {
+      try {
+        // Fetch full database records (guests, bookings, payments, audit logs, settings)
+        const dbData = await getFullDatabaseBackup();
+        const backupData = {
+          timestamp: new Date().toISOString(),
+          backupType: "FULL_SYSTEM_DB_BACKUP",
+          ...dbData
+        };
 
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-        JSON.stringify(backupData, null, 2)
-      )}`;
-      
-      const link = document.createElement("a");
-      link.setAttribute("href", jsonString);
-      link.setAttribute("download", `siddaganga_mutt_backup_${new Date().toISOString().split("T")[0]}.json`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+          JSON.stringify(backupData, null, 2)
+        )}`;
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", jsonString);
+        link.setAttribute("download", `siddaganga_mutt_backup_${new Date().toISOString().split("T")[0]}.json`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
-      toast.success("Full system database backup downloaded successfully");
-    } catch (err) {
-      toast.error("Backup creation failed");
-    }
+        toast.success("Full system database backup downloaded successfully");
+      } catch (err) {
+        toast.error("Backup creation failed");
+      }
+    });
   };
 
   const handleClearSystemData = () => {
@@ -168,10 +170,19 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
                 type="button"
                 onClick={handleSave}
                 disabled={isPending}
-                className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 font-semibold"
               >
-                <Save size={16} />
-                Save Configurations
+                {isPending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Saving Configuration...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Save Configurations
+                  </>
+                )}
               </button>
             </div>
           </Card>
@@ -221,10 +232,20 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
             </p>
             <button
               onClick={handleDownloadBackup}
-              className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5"
+              disabled={isPending}
+              className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
-              <Database size={14} />
-              Create DB Backup Snapshot
+              {isPending ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Generating Snapshot...
+                </>
+              ) : (
+                <>
+                  <Database size={14} />
+                  Create DB Backup Snapshot
+                </>
+              )}
             </button>
 
             {isAdmin && (
@@ -236,10 +257,19 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
                 <button
                   onClick={handleClearSystemData}
                   disabled={isPending}
-                  className="w-full bg-red-600 hover:bg-red-750 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="w-full bg-red-600 hover:bg-red-755 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  <Trash2 size={14} />
-                  Clear All Data & Reset Rooms
+                  {isPending ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Resetting Database...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      Clear All Data & Reset Rooms
+                    </>
+                  )}
                 </button>
               </>
             )}

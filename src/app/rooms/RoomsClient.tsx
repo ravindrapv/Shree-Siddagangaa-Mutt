@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BedDouble, Info, CheckCircle2, RefreshCw, Filter } from "lucide-react";
+import { BedDouble, Info, CheckCircle2, RefreshCw, Filter, Loader2 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -20,6 +20,7 @@ export default function RoomsClient({ initialRooms }: RoomsClientProps) {
   const [rooms, setRooms] = useState<any[]>(initialRooms);
   const [activeFloor, setActiveFloor] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   // Selection states
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
@@ -29,6 +30,7 @@ export default function RoomsClient({ initialRooms }: RoomsClientProps) {
   const handleStatusChange = async (newStatus: "AVAILABLE" | "CLEANING" | "MAINTENANCE") => {
     if (!selectedRoom) return;
 
+    setPendingStatus(newStatus);
     startTransition(async () => {
       try {
         await updateRoomStatus(selectedRoom.id, newStatus);
@@ -43,6 +45,8 @@ export default function RoomsClient({ initialRooms }: RoomsClientProps) {
         setSelectedRoom(null);
       } catch (err) {
         toast.error("Failed to update room status.");
+      } finally {
+        setPendingStatus(null);
       }
     });
   };
@@ -239,36 +243,39 @@ export default function RoomsClient({ initialRooms }: RoomsClientProps) {
                     type="button"
                     disabled={selectedRoom.status === "AVAILABLE" || isPending}
                     onClick={() => handleStatusChange("AVAILABLE")}
-                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       selectedRoom.status === "AVAILABLE"
                         ? "bg-emerald-50 border-emerald-300 text-emerald-700"
                         : "bg-white border-gray-200 hover:bg-emerald-50/30 hover:border-emerald-250 text-emerald-600"
                     } disabled:opacity-60`}
                   >
+                    {pendingStatus === "AVAILABLE" && <Loader2 className="animate-spin" size={12} />}
                     Set Available
                   </button>
                   <button
                     type="button"
                     disabled={selectedRoom.status === "CLEANING" || isPending}
                     onClick={() => handleStatusChange("CLEANING")}
-                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       selectedRoom.status === "CLEANING"
                         ? "bg-amber-50 border-amber-300 text-amber-700"
                         : "bg-white border-gray-200 hover:bg-amber-50/30 hover:border-amber-250 text-amber-600"
                     } disabled:opacity-60`}
                   >
+                    {pendingStatus === "CLEANING" && <Loader2 className="animate-spin" size={12} />}
                     Set Cleaning
                   </button>
                   <button
                     type="button"
                     disabled={selectedRoom.status === "MAINTENANCE" || isPending}
                     onClick={() => handleStatusChange("MAINTENANCE")}
-                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl text-xs font-bold text-center border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       selectedRoom.status === "MAINTENANCE"
                         ? "bg-gray-100 border-gray-300 text-gray-700"
                         : "bg-white border-gray-200 hover:bg-gray-100/50 hover:border-gray-300 text-gray-600"
                     } disabled:opacity-60`}
                   >
+                    {pendingStatus === "MAINTENANCE" && <Loader2 className="animate-spin" size={12} />}
                     Set Maintenance
                   </button>
                 </div>

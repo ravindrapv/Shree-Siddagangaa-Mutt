@@ -10,7 +10,8 @@ import {
   Home,
   Calendar,
   AlertTriangle,
-  FolderOpen
+  FolderOpen,
+  Loader2
 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -273,7 +274,14 @@ export default function CheckoutClient() {
                         disabled={isPending}
                         className="bg-brand-orange hover:bg-brand-orange-hover text-white text-sm font-bold px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
                       >
-                        Settle Balance & Vacate Room
+                        {isPending ? (
+                          <>
+                            <Loader2 className="animate-spin" size={16} />
+                            Settling Stay & Checking Out...
+                          </>
+                        ) : (
+                          "Settle Balance & Vacate Room"
+                        )}
                       </button>
                     </div>
 
