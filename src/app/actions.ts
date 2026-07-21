@@ -382,3 +382,33 @@ export async function authenticateOperator(username: string, password: string, b
     return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
   }
 }
+
+export async function getBookingsPaged(search: string, status: string, page: number, pageSize?: number) {
+  try {
+    const tenantId = await getTenantId();
+    return await dbService.getBookingsPaged(tenantId, search, status, page, pageSize);
+  } catch (error) {
+    console.error("Failed to get paged bookings:", error);
+    throw new Error("Failed to load bookings list.");
+  }
+}
+
+export async function getGuestsPaged(search: string, page: number, pageSize?: number) {
+  try {
+    const tenantId = await getTenantId();
+    return await dbService.getGuestsPaged(tenantId, search, page, pageSize);
+  } catch (error) {
+    console.error("Failed to get paged guests:", error);
+    throw new Error("Failed to load guests directory.");
+  }
+}
+
+export async function getReportData(startDateStr: string, endDateStr: string) {
+  try {
+    const tenantId = await getTenantId();
+    return await dbService.getReportData(startDateStr, endDateStr, tenantId);
+  } catch (error) {
+    console.error("Failed to load report data:", error);
+    throw new Error("Failed to load report data.");
+  }
+}

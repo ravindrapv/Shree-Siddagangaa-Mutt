@@ -1,4 +1,4 @@
-import { getGuests } from "@/app/actions";
+import { getGuestsPaged } from "@/app/actions";
 import GuestsClient from "./GuestsClient";
 
 export const revalidate = 0;
@@ -9,9 +9,9 @@ export const metadata = {
 };
 
 export default async function GuestsPage() {
-  const data = await getGuests();
+  const result = await getGuestsPaged("", 1, 12);
 
   return (
-    <GuestsClient initialGuests={data} />
+    <GuestsClient initialGuests={result.guests} initialTotalCount={result.totalCount} />
   );
 }

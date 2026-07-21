@@ -6,34 +6,57 @@ import Card, { CardTitle } from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getGuestsPaged } from "@/app/actions";
 
 interface GuestsClientProps {
   initialGuests: any[];
+  initialTotalCount: number;
 }
 
-export default function GuestsClient({ initialGuests }: GuestsClientProps) {
+export default function GuestsClient({ initialGuests, initialTotalCount }: GuestsClientProps) {
   const router = useRouter();
   const [guests, setGuests] = useState<any[]>(initialGuests);
+  const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
-
-  const filteredGuests = guests.filter((g) => {
-    const cleanSearch = searchQuery.toLowerCase().trim();
-    if (!cleanSearch) return true;
-
-    return (
-      g.name.toLowerCase().includes(cleanSearch) ||
-      g.phone.includes(cleanSearch) ||
-      g.idNumber.toLowerCase().includes(cleanSearch) ||
-      g.district.toLowerCase().includes(cleanSearch)
-    );
-  });
 
   // Pagination
   const PAGE_SIZE = 12;
   const [page, setPage] = useState(1);
-  const pagedGuests = filteredGuests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  useEffect(() => { setPage(1); }, [searchQuery]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const res = await getGuestsPaged(searchQuery, page, PAGE_SIZE);
+        setGuests(res.guests);
+        setTotalCount(res.totalCount);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (page === 1 && searchQuery === "") {
+      setGuests(initialGuests);
+      setTotalCount(initialTotalCount);
+      return;
+    }
+
+    const delayDebounce = setTimeout(() => {
+      loadData();
+    }, searchQuery ? 300 : 0);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const pagedGuests = guests;
 
   return (
     <div className="space-y-6">
@@ -172,7 +195,7 @@ export default function GuestsClient({ initialGuests }: GuestsClientProps) {
       </div>
 
       <Pagination
-        total={filteredGuests.length}
+        total={totalCount}
         page={page}
         pageSize={PAGE_SIZE}
         onPageChange={setPage}

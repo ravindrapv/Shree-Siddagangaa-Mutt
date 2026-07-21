@@ -318,24 +318,149 @@ export const dbService = {
           } as any;
         });
     }
-    const raw = await prisma.guest.findMany({
-      where: { guestHouseId },
-      orderBy: { createdAt: "desc" }
+    const [raw, activeBookings] = await Promise.all([
+      prisma.guest.findMany({
+        where: { guestHouseId },
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.booking.findMany({
+        where: { guestHouseId, status: "ACTIVE" },
+        select: {
+          guestId: true,
+          room: {
+            select: {
+              roomNumber: true
+            }
+          }
+        }
+      })
+    ]);
+
+    const activeRoomsMap = new Map<string, string[]>();
+    activeBookings.forEach((b: any) => {
+      const roomNum = b.room?.roomNumber;
+      if (roomNum) {
+        const existing = activeRoomsMap.get(b.guestId) || [];
+        existing.push(roomNum);
+        activeRoomsMap.set(b.guestId, existing);
+      }
     });
-    const activeBookings = await prisma.booking.findMany({
-      where: { guestHouseId, status: "ACTIVE" },
-      include: { room: true }
-    });
+
     return raw.map((g: any) => {
-      const stays = activeBookings.filter((b: any) => b.guestId === g.id);
-      const rooms = stays.map((b: any) => b.room?.roomNumber).filter(Boolean);
+      const activeRooms = activeRoomsMap.get(g.id) || [];
       return {
         ...g,
         familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : [],
-        hasActiveStay: stays.length > 0,
-        activeRoomNumbers: rooms.join(", ")
+        hasActiveStay: activeRooms.length > 0,
+        activeRoomNumbers: activeRooms.join(", ")
       };
     }) as unknown as Guest[];
+  },
+
+  async getGuestsPaged(
+    guestHouseId: string,
+    search: string,
+    page: number,
+    pageSize: number = 12
+  ): Promise<{ guests: Guest[]; totalCount: number }> {
+    const skip = (page - 1) * pageSize;
+
+    if (isDemoMode()) {
+      const db = readMockDB();
+      const all = db.guests
+        .filter(g => g.guestHouseId === guestHouseId)
+        .map(g => {
+          const activeStays = db.bookings.filter(b => b.guestHouseId === guestHouseId && b.guestId === g.id && b.status === "ACTIVE");
+          const rooms = activeStays.map(b => db.rooms.find(r => r.id === b.roomId)?.roomNumber).filter(Boolean);
+          return {
+            ...g,
+            hasActiveStay: activeStays.length > 0,
+            activeRoomNumbers: rooms.join(", "),
+            familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
+          };
+        });
+
+      const filtered = all.filter(g => {
+        const cleanSearch = search.trim().toLowerCase();
+        if (cleanSearch === "") return true;
+        return (
+          g.name.toLowerCase().includes(cleanSearch) ||
+          g.phone.includes(cleanSearch) ||
+          g.idNumber.toLowerCase().includes(cleanSearch) ||
+          g.district.toLowerCase().includes(cleanSearch)
+        );
+      });
+
+      return {
+        guests: filtered.slice(skip, skip + pageSize) as unknown as Guest[],
+        totalCount: filtered.length
+      };
+    }
+
+    const whereClause: any = {
+      guestHouseId,
+    };
+
+    if (search.trim() !== "") {
+      const cleanSearch = search.trim();
+      whereClause.OR = [
+        { name: { contains: cleanSearch, mode: "insensitive" } },
+        { phone: { contains: cleanSearch } },
+        { idNumber: { contains: cleanSearch, mode: "insensitive" } },
+        { district: { contains: cleanSearch, mode: "insensitive" } }
+      ];
+    }
+
+    const [totalCount, raw] = await Promise.all([
+      prisma.guest.count({ where: whereClause }),
+      prisma.guest.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize
+      })
+    ]);
+
+    const activeBookings = await prisma.booking.findMany({
+      where: {
+        guestHouseId,
+        status: "ACTIVE",
+        guestId: { in: raw.map(g => g.id) }
+      },
+      select: {
+        guestId: true,
+        room: {
+          select: {
+            roomNumber: true
+          }
+        }
+      }
+    });
+
+    const activeRoomsMap = new Map<string, string[]>();
+    activeBookings.forEach((b: any) => {
+      const roomNum = b.room?.roomNumber;
+      if (roomNum) {
+        const existing = activeRoomsMap.get(b.guestId) || [];
+        existing.push(roomNum);
+        activeRoomsMap.set(b.guestId, existing);
+      }
+    });
+
+    const guests = raw.map((g: any) => {
+      const activeRooms = activeRoomsMap.get(g.id) || [];
+      return {
+        ...g,
+        familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : [],
+        hasActiveStay: activeRooms.length > 0,
+        activeRoomNumbers: activeRooms.join(", ")
+      };
+    });
+
+    return {
+      guests: guests as unknown as Guest[],
+      totalCount
+    };
   },
 
   async getGuest(id: string, guestHouseId: string): Promise<Guest | null> {
@@ -539,14 +664,26 @@ export const dbService = {
       });
     }
 
-    const rooms = await prisma.room.findMany({
-      where: { guestHouseId },
-      orderBy: { roomNumber: "asc" }
-    });
-    const activeBookings = await prisma.booking.findMany({
-      where: { guestHouseId, status: "ACTIVE" },
-      include: { guest: true }
-    });
+    const [rooms, activeBookings] = await Promise.all([
+      prisma.room.findMany({
+        where: { guestHouseId },
+        orderBy: { roomNumber: "asc" }
+      }),
+      prisma.booking.findMany({
+        where: { guestHouseId, status: "ACTIVE" },
+        select: {
+          roomId: true,
+          receiptNo: true,
+          checkOutDate: true,
+          guest: {
+            select: {
+              name: true
+            }
+          }
+        }
+      })
+    ]);
+
     return rooms.map((r: any) => {
       const activeBooking = activeBookings.find((b: any) => b.roomId === r.id);
       if (activeBooking && r.status === "OCCUPIED") {
@@ -589,14 +726,142 @@ export const dbService = {
           ...b,
           guest: db.guests.find(g => g.id === b.guestId),
           room: db.rooms.find(r => r.id === b.roomId),
-          payments: db.payments.filter(p => p.bookingId === b.id)
+          payments: db.payments.filter(p => p.bookingId === b.id),
+          guestHouse: {
+            name: b.guestHouseId === YATHRI_ID ? "Yathri Nivasa" : "Kalyani Guest House",
+            nameKn: b.guestHouseId === YATHRI_ID ? "ಯಾತ್ರಿ ನಿವಾಸ" : "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ"
+          }
         })) as unknown as Booking[];
     }
     return await prisma.booking.findMany({
       where: { guestHouseId },
-      include: { guest: true, room: true, payments: true },
+      include: { guest: true, room: true, payments: true, guestHouse: true },
       orderBy: { createdAt: "desc" }
     }) as unknown as Booking[];
+  },
+
+  async getBookingsPaged(
+    guestHouseId: string,
+    search: string,
+    status: string,
+    page: number,
+    pageSize: number = 10
+  ): Promise<{ bookings: Booking[]; totalCount: number }> {
+    const skip = (page - 1) * pageSize;
+
+    if (isDemoMode()) {
+      const db = readMockDB();
+      const all = db.bookings
+        .filter(b => b.guestHouseId === guestHouseId)
+        .map(b => ({
+          ...b,
+          guest: db.guests.find(g => g.id === b.guestId),
+          room: db.rooms.find(r => r.id === b.roomId),
+          payments: db.payments.filter(p => p.bookingId === b.id),
+          guestHouse: {
+            name: b.guestHouseId === YATHRI_ID ? "Yathri Nivasa" : "Kalyani Guest House",
+            nameKn: b.guestHouseId === YATHRI_ID ? "ಯಾತ್ರಿ ನಿವಾಸ" : "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ"
+          }
+        }));
+
+      const filtered = all.filter(b => {
+        const matchesSearch =
+          b.receiptNo.toLowerCase().includes(search.toLowerCase()) ||
+          b.guest?.name.toLowerCase().includes(search.toLowerCase()) ||
+          b.guest?.phone.includes(search) ||
+          b.room?.roomNumber.includes(search);
+
+        const matchesStatus = status === "ALL" || b.status === status;
+        return matchesSearch && matchesStatus;
+      });
+
+      const sorted = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      return {
+        bookings: sorted.slice(skip, skip + pageSize) as unknown as Booking[],
+        totalCount: filtered.length
+      };
+    }
+
+    const whereClause: any = {
+      guestHouseId,
+    };
+
+    if (status !== "ALL") {
+      whereClause.status = status;
+    }
+
+    if (search.trim() !== "") {
+      const cleanSearch = search.trim();
+      whereClause.OR = [
+        { receiptNo: { contains: cleanSearch, mode: "insensitive" } },
+        {
+          guest: {
+            OR: [
+              { name: { contains: cleanSearch, mode: "insensitive" } },
+              { phone: { contains: cleanSearch } }
+            ]
+          }
+        },
+        {
+          room: {
+            roomNumber: { contains: cleanSearch }
+          }
+        }
+      ];
+    }
+
+    const [totalCount, bookings] = await Promise.all([
+      prisma.booking.count({ where: whereClause }),
+      prisma.booking.findMany({
+        where: whereClause,
+        include: {
+          guest: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              address: true,
+              idType: true,
+              idNumber: true
+            }
+          },
+          room: {
+            select: {
+              id: true,
+              roomNumber: true,
+              type: true,
+              ratePerDay: true
+            }
+          },
+          payments: {
+            select: {
+              id: true,
+              amount: true,
+              method: true,
+              receiptNo: true,
+              date: true
+            }
+          },
+          guestHouse: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              nameKn: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize
+      })
+    ]);
+
+    return {
+      bookings: bookings as unknown as Booking[],
+      totalCount
+    };
   },
 
   async getBooking(id: string, guestHouseId: string): Promise<Booking | null> {
@@ -608,12 +873,16 @@ export const dbService = {
         ...b,
         guest: db.guests.find(g => g.id === b.guestId),
         room: db.rooms.find(r => r.id === b.roomId),
-        payments: db.payments.filter(p => p.bookingId === b.id)
+        payments: db.payments.filter(p => p.bookingId === b.id),
+        guestHouse: {
+          name: b.guestHouseId === YATHRI_ID ? "Yathri Nivasa" : "Kalyani Guest House",
+          nameKn: b.guestHouseId === YATHRI_ID ? "ಯಾತ್ರಿ ನಿವಾಸ" : "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ"
+        }
       } as unknown as Booking;
     }
     return await prisma.booking.findFirst({
       where: { id, guestHouseId },
-      include: { guest: true, room: true, payments: true }
+      include: { guest: true, room: true, payments: true, guestHouse: true }
     }) as unknown as Booking;
   },
 
@@ -651,7 +920,7 @@ export const dbService = {
     const baseReceipt = receiptNo.split("/")[0];
     const matchingBooking = await prisma.booking.findFirst({
       where: { guestHouseId, receiptNo: baseReceipt },
-      include: { guest: true, room: true, payments: true }
+      include: { guest: true, room: true, payments: true, guestHouse: true }
     });
     if (!matchingBooking) return null;
 
@@ -663,7 +932,7 @@ export const dbService = {
           { receiptNo: { startsWith: baseReceipt + "/" } }
         ]
       },
-      include: { room: true, payments: true }
+      include: { room: true, payments: true, guestHouse: true }
     });
 
     const totalAmount = relatedBookings.reduce((sum: number, x: any) => sum + x.totalAmount, 0);
@@ -1281,134 +1550,284 @@ export const dbService = {
       rooms = db.rooms.filter(r => r.guestHouseId === guestHouseId);
       bookings = db.bookings.filter(b => b.guestHouseId === guestHouseId);
       payments = db.payments.filter(p => p.guestHouseId === guestHouseId);
-    } else {
-      rooms = await prisma.room.findMany({ where: { guestHouseId } }) as unknown as Room[];
-      bookings = await prisma.booking.findMany({ 
-        where: { guestHouseId },
-        include: { guest: true, room: true } 
-      }) as unknown as Booking[];
-      payments = await prisma.payment.findMany({ where: { guestHouseId } }) as unknown as Payment[];
-    }
-
-    const todayStr = new Date().toDateString();
-
-    // Today's Checkins
-    const todayCheckins = bookings.filter(b => {
-      const checkinStr = new Date(b.checkInDate).toDateString();
-      return checkinStr === todayStr && b.status === "ACTIVE";
-    });
-
-    // Today's Checkouts
-    const todayCheckouts = bookings.filter(b => {
-      const checkoutStr = new Date(b.checkOutDate).toDateString();
-      return checkoutStr === todayStr && b.status === "CHECKED_OUT";
-    });
-
-    // Room Occupancy Breakdown
-    const occupiedCount = rooms.filter(r => r.status === "OCCUPIED").length;
-    const availableCount = rooms.filter(r => r.status === "AVAILABLE").length;
-    const cleaningCount = rooms.filter(r => r.status === "CLEANING").length;
-    const maintenanceCount = rooms.filter(r => r.status === "MAINTENANCE").length;
-
-    // Stays collections based strictly on Checked-out bookings (rooms vacated)
-    const checkedOutBookings = bookings.filter(b => b.status === "CHECKED_OUT");
-    
+    // --- PostgreSQL optimized dashboard ---
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
 
-    const todayCollection = checkedOutBookings
-      .filter(b => {
-        const checkoutStr = new Date(b.updatedAt || b.checkOutDate).toDateString();
-        return checkoutStr === todayStr;
+    const gte7 = new Date();
+    gte7.setDate(gte7.getDate() - 7);
+
+    const gte30 = new Date();
+    gte30.setDate(gte30.getDate() - 30);
+
+    const gte365 = new Date();
+    gte365.setDate(gte365.getDate() - 365);
+
+    const [
+      todayCheckinsCount,
+      todayCheckoutsCount,
+      roomCounts,
+      totalColAgg,
+      todayColAgg,
+      col7Agg,
+      col30Agg,
+      col365Agg,
+      pendingAgg,
+      recentBookingsRaw,
+      recentPaymentsRaw,
+      upcomingCheckoutsRaw,
+      roomsList,
+      activeBookings
+    ] = await Promise.all([
+      // 1. Today Checkins
+      prisma.booking.count({
+        where: {
+          guestHouseId,
+          status: "ACTIVE",
+          checkInDate: { gte: todayStart, lte: todayEnd }
+        }
+      }),
+      // 2. Today Checkouts
+      prisma.booking.count({
+        where: {
+          guestHouseId,
+          status: "CHECKED_OUT",
+          checkOutDate: { gte: todayStart, lte: todayEnd }
+        }
+      }),
+      // 3. Room counts group by status
+      prisma.room.groupBy({
+        by: ["status"],
+        where: { guestHouseId },
+        _count: { _all: true }
+      }),
+      // 4. Total revenue
+      prisma.booking.aggregate({
+        where: { guestHouseId, status: "CHECKED_OUT" },
+        _sum: { totalAmount: true }
+      }),
+      // 5. Today's collections
+      prisma.booking.aggregate({
+        where: {
+          guestHouseId,
+          status: "CHECKED_OUT",
+          OR: [
+            { updatedAt: { gte: todayStart, lte: todayEnd } },
+            { checkOutDate: { gte: todayStart, lte: todayEnd } }
+          ]
+        },
+        _sum: { totalAmount: true }
+      }),
+      // 6. Last 7 Days
+      prisma.booking.aggregate({
+        where: {
+          guestHouseId,
+          status: "CHECKED_OUT",
+          OR: [
+            { updatedAt: { gte: gte7 } },
+            { checkOutDate: { gte: gte7 } }
+          ]
+        },
+        _sum: { totalAmount: true }
+      }),
+      // 7. Last Month
+      prisma.booking.aggregate({
+        where: {
+          guestHouseId,
+          status: "CHECKED_OUT",
+          OR: [
+            { updatedAt: { gte: gte30 } },
+            { checkOutDate: { gte: gte30 } }
+          ]
+        },
+        _sum: { totalAmount: true }
+      }),
+      // 8. Last Year
+      prisma.booking.aggregate({
+        where: {
+          guestHouseId,
+          status: "CHECKED_OUT",
+          OR: [
+            { updatedAt: { gte: gte365 } },
+            { checkOutDate: { gte: gte365 } }
+          ]
+        },
+        _sum: { totalAmount: true }
+      }),
+      // 9. Pending Amount
+      prisma.booking.aggregate({
+        where: { guestHouseId, status: "ACTIVE" },
+        _sum: { balanceAmount: true }
+      }),
+      // 10. Recent Bookings (limit 5)
+      prisma.booking.findMany({
+        where: { guestHouseId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          receiptNo: true,
+          checkInDate: true,
+          checkOutDate: true,
+          totalAmount: true,
+          advancePaid: true,
+          balanceAmount: true,
+          status: true,
+          guest: {
+            select: { name: true, phone: true }
+          },
+          room: {
+            select: { roomNumber: true, type: true }
+          }
+        }
+      }),
+      // 11. Recent Payments (limit 5)
+      prisma.payment.findMany({
+        where: { guestHouseId },
+        orderBy: { date: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          receiptNo: true,
+          amount: true,
+          method: true,
+          date: true,
+          notes: true,
+          booking: {
+            select: {
+              guest: {
+                select: { name: true }
+              }
+            }
+          }
+        }
+      }),
+      // 12. Upcoming Checkouts (limit 5)
+      prisma.booking.findMany({
+        where: { guestHouseId, status: "ACTIVE" },
+        orderBy: { checkOutDate: "asc" },
+        take: 5,
+        select: {
+          id: true,
+          receiptNo: true,
+          checkOutDate: true,
+          balanceAmount: true,
+          guest: {
+            select: { name: true }
+          },
+          room: {
+            select: { roomNumber: true }
+          }
+        }
+      }),
+      // 13. Rooms list for Floor grid
+      prisma.room.findMany({
+        where: { guestHouseId },
+        select: {
+          id: true,
+          roomNumber: true,
+          floor: true,
+          type: true,
+          status: true,
+          capacity: true,
+          ratePerDay: true,
+          facilities: true
+        }
+      }),
+      // 14. Active stays to map Floor grid details
+      prisma.booking.findMany({
+        where: { guestHouseId, status: "ACTIVE" },
+        select: {
+          roomId: true,
+          checkOutDate: true,
+          guest: {
+            select: { name: true }
+          }
+        }
       })
-      .reduce((acc, b) => acc + b.totalAmount, 0);
+    ]);
 
-    const getCollectionForDays = (days: number) => {
-      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-      return checkedOutBookings
-        .filter(b => new Date(b.updatedAt || b.checkOutDate).getTime() >= cutoff)
-        .reduce((acc, b) => acc + b.totalAmount, 0);
-    };
-
-    const last7DaysCollection = getCollectionForDays(7);
-    const lastMonthCollection = getCollectionForDays(30);
-    const yearCollection = getCollectionForDays(365);
-    const totalCollection = checkedOutBookings.reduce((acc, b) => acc + b.totalAmount, 0);
-
-    // Pending Payments
-    const pendingAmount = bookings
-      .filter(b => b.status === "ACTIVE")
-      .reduce((acc, b) => acc + b.balanceAmount, 0);
-
-    // Recent Bookings (limit 5)
-    const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    const recentCheckins = sortedBookings.slice(0, 5).map((b: any) => {
-      const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId) : null);
-      const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId) : null);
-      return {
-        id: b.id,
-        receiptNo: b.receiptNo,
-        guestName: guest?.name || "Unknown Guest",
-        phone: guest?.phone || "N/A",
-        roomNumber: room?.roomNumber || "N/A",
-        roomType: room?.type || "N/A",
-        checkInDate: b.checkInDate,
-        checkOutDate: b.checkOutDate,
-        totalAmount: b.totalAmount,
-        advancePaid: b.advancePaid,
-        balanceAmount: b.balanceAmount,
-        status: b.status
-      };
+    // Parse Room counts by status
+    let occupiedCount = 0;
+    let availableCount = 0;
+    let cleaningCount = 0;
+    let maintenanceCount = 0;
+    roomCounts.forEach(c => {
+      if (c.status === "OCCUPIED") occupiedCount = c._count._all;
+      if (c.status === "AVAILABLE") availableCount = c._count._all;
+      if (c.status === "CLEANING") cleaningCount = c._count._all;
+      if (c.status === "MAINTENANCE") maintenanceCount = c._count._all;
     });
 
-    // Recent Payments
-    const sortedPayments = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const recentPayments = sortedPayments.slice(0, 5).map((p: any) => {
-      const booking = bookings.find(b => b.id === p.bookingId);
-      const guest = booking ? (booking.guest || (db ? db.guests.find(g => g.id === booking.guestId && g.guestHouseId === guestHouseId) : null)) : null;
-      return {
-        id: p.id,
-        receiptNo: p.receiptNo,
-        guestName: guest?.name || "N/A",
-        amount: p.amount,
-        method: p.method,
-        date: p.date,
-        notes: p.notes
-      };
-    });
+    const totalCollection = totalColAgg._sum.totalAmount || 0;
+    const todayCollection = todayColAgg._sum.totalAmount || 0;
+    const last7DaysCollection = col7Agg._sum.totalAmount || 0;
+    const lastMonthCollection = col30Agg._sum.totalAmount || 0;
+    const yearCollection = col365Agg._sum.totalAmount || 0;
+    const pendingAmount = pendingAgg._sum.balanceAmount || 0;
 
-    // Upcoming Checkouts (active bookings checking out soon)
-    const upcomingCheckouts = bookings
-      .filter(b => b.status === "ACTIVE")
-      .sort((a, b) => new Date(a.checkOutDate).getTime() - new Date(b.checkOutDate).getTime())
-      .slice(0, 5)
-      .map((b: any) => {
-        const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId) : null);
-        const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId) : null);
-        return {
-          id: b.id,
-          receiptNo: b.receiptNo,
-          guestName: guest?.name || "N/A",
-          roomNumber: room?.roomNumber || "N/A",
-          checkOutDate: b.checkOutDate,
-          balanceAmount: b.balanceAmount
-        };
+    // Transform recent bookings
+    const recentCheckins = recentBookingsRaw.map(b => ({
+      id: b.id,
+      receiptNo: b.receiptNo,
+      guestName: b.guest?.name || "Unknown Guest",
+      phone: b.guest?.phone || "N/A",
+      roomNumber: b.room?.roomNumber || "N/A",
+      roomType: b.room?.type || "N/A",
+      checkInDate: b.checkInDate,
+      checkOutDate: b.checkOutDate,
+      totalAmount: b.totalAmount,
+      advancePaid: b.advancePaid,
+      balanceAmount: b.balanceAmount,
+      status: b.status
+    }));
+
+    // Transform recent payments
+    const recentPayments = recentPaymentsRaw.map(p => ({
+      id: p.id,
+      receiptNo: p.receiptNo,
+      guestName: p.booking?.guest?.name || "N/A",
+      amount: p.amount,
+      method: p.method,
+      date: p.date,
+      notes: p.notes
+    }));
+
+    // Transform upcoming checkouts
+    const upcomingCheckouts = upcomingCheckoutsRaw.map(b => ({
+      id: b.id,
+      receiptNo: b.receiptNo,
+      guestName: b.guest?.name || "N/A",
+      roomNumber: b.room?.roomNumber || "N/A",
+      checkOutDate: b.checkOutDate,
+      balanceAmount: b.balanceAmount
+    }));
+
+    // Optimize Floor Status mapping using an in-memory Map (0 N+1 queries!)
+    const activeBookingMap = new Map();
+    activeBookings.forEach(b => {
+      activeBookingMap.set(b.roomId, {
+        guestName: b.guest?.name || "Unknown Guest",
+        checkOutDate: b.checkOutDate
       });
+    });
 
-    const getOccupiedDetails = (roomId: string) => {
-      const activeBooking = bookings.find(b => b.roomId === roomId && b.status === "ACTIVE");
-      if (!activeBooking) return undefined;
-      const guest = activeBooking.guest || (db ? db.guests.find(g => g.id === activeBooking.guestId && g.guestHouseId === guestHouseId) : null);
-      return {
-        guestName: guest?.name || "Unknown Guest",
-        checkOutDate: activeBooking.checkOutDate
-      };
-    };
+    const mappedRooms = roomsList.map(r => {
+      if (r.status === "OCCUPIED") {
+        return {
+          ...r,
+          occupiedDetails: activeBookingMap.get(r.id)
+        };
+      }
+      return r;
+    });
 
     return {
       stats: {
-        todayCheckinsCount: todayCheckins.length,
-        todayCheckoutsCount: todayCheckouts.length,
+        todayCheckinsCount,
+        todayCheckoutsCount,
         occupiedCount,
         availableCount,
         cleaningCount,
@@ -1427,10 +1846,115 @@ export const dbService = {
       recentPayments,
       upcomingCheckouts,
       floorStatus: {
-        Ground: rooms.filter(r => r.floor.includes("Ground")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r),
-        First: rooms.filter(r => r.floor.includes("First")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r),
-        Second: rooms.filter(r => r.floor.includes("Second")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r)
+        Ground: mappedRooms.filter(r => r.floor.includes("Ground")),
+        First: mappedRooms.filter(r => r.floor.includes("First")),
+        Second: mappedRooms.filter(r => r.floor.includes("Second"))
       }
+    };
+  }
+  },
+
+  async getReportData(
+    startDateStr: string,
+    endDateStr: string,
+    guestHouseId: string
+  ): Promise<{ checkoutStays: Booking[]; collections: Payment[] }> {
+    const start = new Date(startDateStr);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDateStr);
+    end.setHours(23, 59, 59, 999);
+
+    if (isDemoMode()) {
+      const db = readMockDB();
+      const allBookings = db.bookings
+        .filter(b => b.guestHouseId === guestHouseId)
+        .map(b => ({
+          ...b,
+          guest: db.guests.find(g => g.id === b.guestId),
+          room: db.rooms.find(r => r.id === b.roomId)
+        }));
+      const allPayments = db.payments
+        .filter(p => p.guestHouseId === guestHouseId)
+        .map(p => {
+          const b = db.bookings.find(bx => bx.id === p.bookingId);
+          return {
+            ...p,
+            booking: b ? { guest: db.guests.find(g => g.id === b.guestId) } : null
+          };
+        });
+
+      const relevantBookings = allBookings.filter(b => {
+        const createdDate = new Date(b.createdAt);
+        const isCreatedInRange = createdDate >= start && createdDate <= end;
+        
+        if (b.status === "CHECKED_OUT") {
+          const checkOutD = new Date(b.updatedAt || b.checkOutDate);
+          const isCheckOutInRange = checkOutD >= start && checkOutD <= end;
+          return isCheckOutInRange || isCreatedInRange;
+        }
+        
+        return isCreatedInRange;
+      });
+
+      const collections = allPayments.filter(p => {
+        const d = new Date(p.date);
+        return d >= start && d <= end;
+      });
+
+      return {
+        checkoutStays: relevantBookings as unknown as Booking[],
+        collections: collections as unknown as Payment[]
+      };
+    }
+
+    const [bookings, collections] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          guestHouseId,
+          OR: [
+            {
+              status: "CHECKED_OUT",
+              OR: [
+                { updatedAt: { gte: start, lte: end } },
+                { checkOutDate: { gte: start, lte: end } }
+              ]
+            },
+            {
+              createdAt: { gte: start, lte: end }
+            }
+          ]
+        },
+        include: {
+          guest: {
+            select: { name: true, phone: true }
+          },
+          room: {
+            select: { roomNumber: true }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.payment.findMany({
+        where: {
+          guestHouseId,
+          date: { gte: start, lte: end }
+        },
+        include: {
+          booking: {
+            select: {
+              guest: {
+                select: { name: true }
+              }
+            }
+          }
+        },
+        orderBy: { date: "desc" }
+      })
+    ]);
+
+    return {
+      checkoutStays: bookings as unknown as Booking[],
+      collections: collections as unknown as Payment[]
     };
   }
 };

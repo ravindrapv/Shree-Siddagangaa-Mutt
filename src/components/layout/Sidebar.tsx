@@ -44,7 +44,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     async function loadStats() {
       try {
         const data = await getDashboardStats();
-        if (!cancelled) {
+        if (!cancelled && data && data.stats) {
           setStats({
             total: data.stats.todayCollection,
             cash: data.stats.cashCollection,

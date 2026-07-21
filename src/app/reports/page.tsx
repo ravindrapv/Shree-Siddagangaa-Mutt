@@ -1,4 +1,4 @@
-import { getPayments, getBookings } from "@/app/actions";
+import { getReportData } from "@/app/actions";
 import ReportsClient from "./ReportsClient";
 
 export const revalidate = 0;
@@ -9,10 +9,16 @@ export const metadata = {
 };
 
 export default async function ReportsPage() {
-  const payments = await getPayments();
-  const bookings = await getBookings();
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 30);
+
+  const initialData = await getReportData(
+    startDate.toISOString().split("T")[0],
+    endDate.toISOString().split("T")[0]
+  );
 
   return (
-    <ReportsClient initialPayments={payments} initialBookings={bookings} />
+    <ReportsClient initialPayments={initialData.collections} initialBookings={initialData.checkoutStays} />
   );
 }

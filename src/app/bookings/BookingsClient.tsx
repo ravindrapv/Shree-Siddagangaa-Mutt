@@ -22,7 +22,8 @@ import {
   getRooms, 
   transferRoom, 
   extendStay, 
-  cancelBooking 
+  cancelBooking,
+  getBookingsPaged
 } from "@/app/actions";
 import Link from "next/link";
 
@@ -30,10 +31,13 @@ import Link from "next/link";
 export const renderA4Receipt = (booking: any, copyType: "devotee" | "office", additionalCharges: number = 0, chargeNotes: string = "") => {
   if (!booking) return null;
   
-  // Resolve active guesthouse name
-  const isYathri = booking.guestHouseId === "guesthouse_yathrinivasa" || booking.building === "Yathri Nivasa";
-  const guestHouseKannada = isYathri ? "ಯಾತ್ರಿ ನಿವಾಸ" : "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ";
-  const guestHouseEnglish = isYathri ? "Yathri Nivasa" : "Kalyani Guest House";
+  // Resolve active guesthouse name dynamically
+  const isYathri = booking.guestHouseId === "b2d9a726-6f71-55af-c9e5-649d3cc1f5d0" || 
+                   booking.guestHouseId === "guesthouse_yathrinivasa" ||
+                   booking.building === "Yathri Nivasa" || 
+                   booking.guestHouse?.code === "YATHRI";
+  const guestHouseKannada = booking.guestHouse?.nameKn || (isYathri ? "ಯಾತ್ರಿ ನಿವಾಸ" : "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ");
+  const guestHouseEnglish = booking.guestHouse?.name || (isYathri ? "Yathri Nivasa" : "Kalyani Guest House");
   
   const formattedCheckIn = booking.checkInDate 
     ? new Date(booking.checkInDate).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" }) 
@@ -217,14 +221,16 @@ export const renderA4Receipt = (booking: any, copyType: "devotee" | "office", ad
 
 interface BookingsClientProps {
   initialBookings: any[];
+  initialTotalCount: number;
 }
 
-export default function BookingsClient({ initialBookings }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, initialTotalCount }: BookingsClientProps) {
   const toast = useToast();
   const [isPending, startTransition] = useTransition();
 
   // Data states
   const [bookings, setBookings] = useState(initialBookings);
+  const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [rooms, setRooms] = useState<any[]>([]);
 
   // Search/Filter states
@@ -234,6 +240,7 @@ export default function BookingsClient({ initialBookings }: BookingsClientProps)
   // Pagination
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   // Selection states
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -262,24 +269,41 @@ export default function BookingsClient({ initialBookings }: BookingsClientProps)
     loadRooms();
   }, []);
 
-  // Filter logic — reset to page 1 whenever search/filter changes
-  const filteredBookings = bookings.filter((b) => {
-    const matchesSearch = 
-      b.receiptNo.toLowerCase().includes(search.toLowerCase()) ||
-      b.guest?.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.guest?.phone.includes(search) ||
-      b.room?.roomNumber.includes(search);
+  // Fetch data from server when search, statusFilter, or page changes
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const res = await getBookingsPaged(search, statusFilter, page, PAGE_SIZE);
+        setBookings(res.bookings);
+        setTotalCount(res.totalCount);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load bookings");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    const matchesStatus = statusFilter === "ALL" || b.status === statusFilter;
+    if (page === 1 && search === "" && statusFilter === "ALL") {
+      setBookings(initialBookings);
+      setTotalCount(initialTotalCount);
+      return;
+    }
 
-    return matchesSearch && matchesStatus;
-  });
+    const delayDebounce = setTimeout(() => {
+      loadData();
+    }, search ? 300 : 0);
 
-  // Paginated slice
-  const pagedBookings = filteredBookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    return () => clearTimeout(delayDebounce);
+  }, [search, statusFilter, page]);
 
-  // Reset page on filter/search changes
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  // Reset page when search or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  const pagedBookings = bookings;
 
   // Action: Transfer Room
   const handleTransferSubmit = () => {
@@ -517,7 +541,7 @@ export default function BookingsClient({ initialBookings }: BookingsClientProps)
         </div>
         <div className="px-2 pb-1">
           <Pagination
-            total={filteredBookings.length}
+            total={totalCount}
             page={page}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}

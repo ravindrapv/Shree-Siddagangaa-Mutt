@@ -6,6 +6,7 @@ import Card, { CardTitle } from "@/components/ui/Card";
 import { useToast } from "@/hooks/use-toast";
 import PrintPortal from "@/components/ui/PrintPortal";
 import Pagination from "@/components/ui/Pagination";
+import { getReportData } from "@/app/actions";
 
 interface ReportsClientProps {
   initialPayments: any[];
@@ -15,14 +16,54 @@ interface ReportsClientProps {
 export default function ReportsClient({ initialPayments, initialBookings }: ReportsClientProps) {
   const toast = useToast();
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split("T")[0];
+  });
+
+  const [bookings, setBookings] = useState(initialBookings);
+  const [payments, setPayments] = useState(initialPayments);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    setStartDate(todayStr);
-    setEndDate(todayStr);
-  }, []);
+    if (!startDate || !endDate) return;
+
+    // Skip the first run if we're on the default 30-day range to leverage SSR
+    const defaultStart = new Date();
+    defaultStart.setDate(new Date().getDate() - 30);
+    const defaultStartStr = defaultStart.toISOString().split("T")[0];
+    const defaultEndStr = new Date().toISOString().split("T")[0];
+    
+    if (startDate === defaultStartStr && endDate === defaultEndStr) {
+      setBookings(initialBookings);
+      setPayments(initialPayments);
+      return;
+    }
+
+    async function loadData() {
+      setLoading(true);
+      try {
+        const res = await getReportData(startDate, endDate);
+        setBookings(res.checkoutStays);
+        setPayments(res.collections);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load report data");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    const timer = setTimeout(() => {
+      loadData();
+    }, 100); // Small debounce
+
+    return () => clearTimeout(timer);
+  }, [startDate, endDate]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -47,7 +88,7 @@ export default function ReportsClient({ initialPayments, initialBookings }: Repo
   };
 
   // Filter stays that checked out within this period
-  const checkedOutBookings = initialBookings.filter((b) => {
+  const checkedOutBookings = bookings.filter((b) => {
     if (b.status !== "CHECKED_OUT") return false;
     const checkoutDate = new Date(b.updatedAt || b.checkOutDate).toISOString().split("T")[0];
     return checkoutDate >= startDate && checkoutDate <= endDate;
@@ -63,7 +104,7 @@ export default function ReportsClient({ initialPayments, initialBookings }: Repo
     notes: `Checked out stay — Room ${b.room?.roomNumber || "N/A"} (${b.noOfDays} Days)`
   }));
 
-  const filteredBookings = initialBookings.filter((b) => {
+  const filteredBookings = bookings.filter((b) => {
     const bDate = new Date(b.createdAt).toISOString().split("T")[0];
     return bDate >= startDate && bDate <= endDate;
   });

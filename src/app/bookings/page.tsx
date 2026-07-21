@@ -1,4 +1,4 @@
-import { getBookings } from "../actions";
+import { getBookingsPaged } from "../actions";
 import BookingsClient from "./BookingsClient";
 
 export const revalidate = 0;
@@ -9,9 +9,9 @@ export const metadata = {
 };
 
 export default async function BookingsPage() {
-  const data = await getBookings();
+  const result = await getBookingsPaged("", "ALL", 1, 10);
 
   return (
-    <BookingsClient initialBookings={data} />
+    <BookingsClient initialBookings={result.bookings} initialTotalCount={result.totalCount} />
   );
 }
