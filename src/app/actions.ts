@@ -4,10 +4,31 @@ import { dbService, Guest, Room, Booking, Payment, AuditLog, Setting } from "@/l
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { cookies } from "next/headers";
+
+// Branded static guest house UUIDs
+const KALYANI_ID = "a1c8f615-5e60-449e-b8d4-539c2bb0e4cf";
+const YATHRI_ID = "b2d9a726-6f71-55af-c9e5-649d3cc1f5d0";
+
+// Resolves current active tenant context from cookies safely on the server side
+export async function getTenantId(): Promise<string> {
+  try {
+    const cookieStore = await cookies();
+    const guestHouseId = cookieStore.get("guesthouse_id")?.value;
+    if (!guestHouseId) {
+      // Fallback default to Kalyani Guest House context to prevent boot-up page rendering crashes
+      return KALYANI_ID;
+    }
+    return guestHouseId;
+  } catch {
+    return KALYANI_ID;
+  }
+}
 
 export async function getDashboardStats() {
   try {
-    return await dbService.getDashboardStats();
+    const tenantId = await getTenantId();
+    return await dbService.getDashboardStats(tenantId);
   } catch (error) {
     console.error("Failed to get dashboard stats:", error);
     throw new Error("Failed to load dashboard statistics.");
@@ -16,7 +37,8 @@ export async function getDashboardStats() {
 
 export async function getGuests() {
   try {
-    return await dbService.getGuests();
+    const tenantId = await getTenantId();
+    return await dbService.getGuests(tenantId);
   } catch (error) {
     console.error("Failed to get guests:", error);
     throw new Error("Failed to load guests.");
@@ -25,17 +47,18 @@ export async function getGuests() {
 
 export async function getGuest(id: string) {
   try {
-    return await dbService.getGuest(id);
+    const tenantId = await getTenantId();
+    return await dbService.getGuest(id, tenantId);
   } catch (error) {
     console.error("Failed to get guest:", error);
     throw new Error("Failed to load guest profile.");
   }
 }
 
-
 export async function getRooms() {
   try {
-    return await dbService.getRooms();
+    const tenantId = await getTenantId();
+    return await dbService.getRooms(tenantId);
   } catch (error) {
     console.error("Failed to get rooms:", error);
     throw new Error("Failed to load rooms.");
@@ -44,7 +67,8 @@ export async function getRooms() {
 
 export async function updateRoomStatus(roomId: string, status: Room['status']) {
   try {
-    const r = await dbService.updateRoomStatus(roomId, status);
+    const tenantId = await getTenantId();
+    const r = await dbService.updateRoomStatus(roomId, status, tenantId);
     revalidatePath("/");
     revalidatePath("/rooms");
     return r;
@@ -56,27 +80,30 @@ export async function updateRoomStatus(roomId: string, status: Room['status']) {
 
 export async function searchGuest(query: string) {
   try {
-    return await dbService.searchGuest(query);
+    const tenantId = await getTenantId();
+    return await dbService.searchGuest(query, tenantId);
   } catch (error) {
     console.error("Failed to search guest:", error);
     throw new Error("Failed to search for guest.");
   }
 }
 
-export async function createGuest(data: Omit<Guest, "id" | "createdAt" | "updatedAt">) {
+export async function createGuest(data: Omit<Guest, "id" | "guestHouseId" | "createdAt" | "updatedAt">) {
   try {
-    const g = await dbService.createGuest(data);
+    const tenantId = await getTenantId();
+    const g = await dbService.createGuest(data, tenantId);
     revalidatePath("/guests");
     return g;
   } catch (error) {
     console.error("Failed to create guest:", error);
-    throw new Error("Failed to save guest profile.");
+    throw new Error(error instanceof Error ? error.message : "Failed to save guest profile.");
   }
 }
 
 export async function createBooking(data: {
   guestId: string;
-  roomId: string;
+  roomId?: string;
+  roomIds?: string[];
   checkInDate: string;
   checkOutDate: string;
   noOfDays: number;
@@ -89,7 +116,8 @@ export async function createBooking(data: {
   paymentNote?: string;
 }) {
   try {
-    const b = await dbService.createBooking(data);
+    const tenantId = await getTenantId();
+    const b = await dbService.createBooking(data, tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/rooms");
@@ -107,7 +135,8 @@ export async function checkoutBooking(id: string, paymentDetails: {
   paymentNote?: string;
 }) {
   try {
-    const b = await dbService.checkoutBooking(id, paymentDetails);
+    const tenantId = await getTenantId();
+    const b = await dbService.checkoutBooking(id, paymentDetails, tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/rooms");
@@ -121,7 +150,8 @@ export async function checkoutBooking(id: string, paymentDetails: {
 
 export async function transferRoom(bookingId: string, newRoomId: string) {
   try {
-    const b = await dbService.transferRoom(bookingId, newRoomId);
+    const tenantId = await getTenantId();
+    const b = await dbService.transferRoom(bookingId, newRoomId, tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/rooms");
@@ -134,7 +164,8 @@ export async function transferRoom(bookingId: string, newRoomId: string) {
 
 export async function extendStay(bookingId: string, additionalDays: number, additionalCost: number) {
   try {
-    const b = await dbService.extendStay(bookingId, additionalDays, additionalCost);
+    const tenantId = await getTenantId();
+    const b = await dbService.extendStay(bookingId, additionalDays, additionalCost, tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     return b;
@@ -146,7 +177,8 @@ export async function extendStay(bookingId: string, additionalDays: number, addi
 
 export async function cancelBooking(bookingId: string) {
   try {
-    const b = await dbService.cancelBooking(bookingId);
+    const tenantId = await getTenantId();
+    const b = await dbService.cancelBooking(bookingId, tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/rooms");
@@ -159,7 +191,8 @@ export async function cancelBooking(bookingId: string) {
 
 export async function getBookings() {
   try {
-    return await dbService.getBookings();
+    const tenantId = await getTenantId();
+    return await dbService.getBookings(tenantId);
   } catch (error) {
     console.error("Failed to get bookings:", error);
     throw new Error("Failed to load bookings.");
@@ -168,7 +201,8 @@ export async function getBookings() {
 
 export async function getBooking(id: string) {
   try {
-    return await dbService.getBooking(id);
+    const tenantId = await getTenantId();
+    return await dbService.getBooking(id, tenantId);
   } catch (error) {
     console.error("Failed to get booking details:", error);
     throw new Error("Failed to load booking details.");
@@ -177,7 +211,8 @@ export async function getBooking(id: string) {
 
 export async function getBookingByReceipt(receiptNo: string) {
   try {
-    return await dbService.getBookingByReceipt(receiptNo);
+    const tenantId = await getTenantId();
+    return await dbService.getBookingByReceipt(receiptNo, tenantId);
   } catch (error) {
     console.error("Failed to find booking by receipt:", error);
     throw new Error("Failed to search for booking receipt.");
@@ -186,7 +221,8 @@ export async function getBookingByReceipt(receiptNo: string) {
 
 export async function getPayments() {
   try {
-    return await dbService.getPayments();
+    const tenantId = await getTenantId();
+    return await dbService.getPayments(tenantId);
   } catch (error) {
     console.error("Failed to get payments:", error);
     throw new Error("Failed to load payment history.");
@@ -195,7 +231,8 @@ export async function getPayments() {
 
 export async function getAuditLogs() {
   try {
-    return await dbService.getAuditLogs();
+    const tenantId = await getTenantId();
+    return await dbService.getAuditLogs(tenantId);
   } catch (error) {
     console.error("Failed to get audit logs:", error);
     throw new Error("Failed to load activity logs.");
@@ -204,7 +241,8 @@ export async function getAuditLogs() {
 
 export async function getSettings() {
   try {
-    return await dbService.getSettings();
+    const tenantId = await getTenantId();
+    return await dbService.getSettings(tenantId);
   } catch (error) {
     console.error("Failed to get settings:", error);
     throw new Error("Failed to load settings.");
@@ -213,7 +251,8 @@ export async function getSettings() {
 
 export async function updateSetting(key: string, value: string) {
   try {
-    const s = await dbService.updateSetting(key, value);
+    const tenantId = await getTenantId();
+    const s = await dbService.updateSetting(key, value, tenantId);
     revalidatePath("/settings");
     return s;
   } catch (error) {
@@ -224,7 +263,8 @@ export async function updateSetting(key: string, value: string) {
 
 export async function clearAllSystemData() {
   try {
-    await dbService.clearAllData();
+    const tenantId = await getTenantId();
+    await dbService.clearAllData(tenantId);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/rooms");
@@ -239,7 +279,8 @@ export async function clearAllSystemData() {
 
 export async function getFullDatabaseBackup() {
   try {
-    return await dbService.getFullDatabaseBackup();
+    const tenantId = await getTenantId();
+    return await dbService.getFullDatabaseBackup(tenantId);
   } catch (error) {
     console.error("Failed to export full database backup:", error);
     throw new Error("Failed to export full database backup.");
@@ -248,7 +289,8 @@ export async function getFullDatabaseBackup() {
 
 export async function updateGuestPhoto(guestId: string, photoUrl: string) {
   try {
-    const g = await dbService.updateGuestPhoto(guestId, photoUrl);
+    const tenantId = await getTenantId();
+    const g = await dbService.updateGuestPhoto(guestId, photoUrl, tenantId);
     revalidatePath(`/guests/${guestId}`);
     revalidatePath("/guests");
     return g;
@@ -260,7 +302,8 @@ export async function updateGuestPhoto(guestId: string, photoUrl: string) {
 
 export async function updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: string) {
   try {
-    const g = await dbService.updateGuestIdCardPhoto(guestId, idCardPhotoUrl);
+    const tenantId = await getTenantId();
+    const g = await dbService.updateGuestIdCardPhoto(guestId, idCardPhotoUrl, tenantId);
     revalidatePath(`/guests/${guestId}`);
     revalidatePath("/guests");
     return g;
@@ -275,50 +318,67 @@ export async function authenticateOperator(username: string, password: string, b
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
       let isValid = false;
       let detectedRole = "";
+      let guestHouseId = "";
+      let guestHouseNameKn = "";
+
       if (building === "Kalyani") {
         if (username === "kalyani_reception" && password === "KalyaniDesk@Rec44") {
           isValid = true;
           detectedRole = "RECEPTION";
+          guestHouseId = KALYANI_ID;
+          guestHouseNameKn = "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ";
         } else if (username === "kalyani_admin" && password === "SiddhaKalyani#Ad99") {
           isValid = true;
           detectedRole = "ADMIN";
+          guestHouseId = KALYANI_ID;
+          guestHouseNameKn = "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ";
         }
       } else {
         if (username === "yathri_reception" && password === "YathriDesk&Rec33") {
           isValid = true;
           detectedRole = "RECEPTION";
+          guestHouseId = YATHRI_ID;
+          guestHouseNameKn = "ಯಾತ್ರಿ ನಿವಾಸ";
         } else if (username === "yathri_admin" && password === "MuttYathri$Ad88") {
           isValid = true;
           detectedRole = "ADMIN";
+          guestHouseId = YATHRI_ID;
+          guestHouseNameKn = "ಯಾತ್ರಿ ನಿವಾಸ";
         }
       }
-      return { isValid, role: detectedRole };
+      return { isValid, role: detectedRole, guestHouseId, guestHouseNameKn };
     }
 
     // Database authentication
-    const user = await prisma.user.findUnique({
-      where: { username }
+    const user = await prisma.user.findFirst({
+      where: { username },
+      include: { guestHouse: true }
     });
     if (!user) {
-      return { isValid: false, role: "" };
+      return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
     }
 
     // Verify username building matches prefix
     if (building === "Kalyani" && !username.startsWith("kalyani_")) {
-      return { isValid: false, role: "" };
+      return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
     }
     if (building === "Yathri" && !username.startsWith("yathri_")) {
-      return { isValid: false, role: "" };
+      return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
     }
 
     const matches = await bcrypt.compare(password, user.passwordHash);
     if (!matches) {
-      return { isValid: false, role: "" };
+      return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
     }
 
-    return { isValid: true, role: user.role };
+    return { 
+      isValid: true, 
+      role: user.role, 
+      guestHouseId: user.guestHouseId, 
+      guestHouseNameKn: user.guestHouse.nameKn 
+    };
   } catch (error) {
     console.error("Failed to authenticate operator:", error);
-    return { isValid: false, role: "" };
+    return { isValid: false, role: "", guestHouseId: "", guestHouseNameKn: "" };
   }
 }

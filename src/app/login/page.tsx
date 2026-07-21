@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, Lock, ArrowRight, Shield } from "lucide-react";
 import Card from "@/components/ui/Card";
@@ -15,6 +15,19 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberSelection, setRememberSelection] = useState(false);
+
+  // Load remember selection on mount
+  useEffect(() => {
+    const remember = localStorage.getItem("guesthouse_remember_selection") === "true";
+    setRememberSelection(remember);
+    if (remember) {
+      const savedBuilding = localStorage.getItem("guesthouse_remember_building") as "Kalyani" | "Yathri";
+      if (savedBuilding === "Kalyani" || savedBuilding === "Yathri") {
+        setSelectedBuilding(savedBuilding);
+      }
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +51,22 @@ export default function LoginPage() {
         ? (selectedBuilding === "Kalyani" ? "Kalyani Admin" : "Yathri Admin")
         : (selectedBuilding === "Kalyani" ? "Kalyani Reception" : "Yathri Reception");
 
+      // Save remember preferences in localStorage
+      if (rememberSelection) {
+        localStorage.setItem("guesthouse_remember_selection", "true");
+        localStorage.setItem("guesthouse_remember_building", selectedBuilding);
+      } else {
+        localStorage.setItem("guesthouse_remember_selection", "false");
+        localStorage.removeItem("guesthouse_remember_building");
+      }
+
       // Store context cookies
       document.cookie = `guesthouse_username=${username}; path=/; max-age=86400`;
       document.cookie = `guesthouse_role=${res.role}; path=/; max-age=86400`;
       document.cookie = `guesthouse_building=${buildingName}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_building_kn=${res.guestHouseNameKn}; path=/; max-age=86400`;
       document.cookie = `guesthouse_name=${name}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_id=${res.guestHouseId}; path=/; max-age=86400`;
 
       toast.success(`Welcome back to ${buildingName} stay console!`);
       router.push("/");
@@ -166,6 +190,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 required
+                autoComplete="off"
                 placeholder="reception_desk"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -180,11 +205,26 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="new-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-white border border-gray-250 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange text-dark-brown font-semibold shadow-sm w-full"
               />
+            </div>
+
+            {/* Remember preferences */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={rememberSelection}
+                onChange={(e) => setRememberSelection(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand-orange border-gray-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
+              />
+              <label htmlFor="remember" className="text-xs text-gray-650 font-bold select-none cursor-pointer">
+                Remember Guest House Selection
+              </label>
             </div>
 
             <button
@@ -204,12 +244,14 @@ export default function LoginPage() {
             </p>
             <div className="grid grid-cols-2 gap-2.5 text-xs font-bold">
               <button
+                type="button"
                 onClick={() => handleAutoFill("reception")}
                 className="bg-orange-50/20 hover:bg-orange-50 border border-orange-200/50 text-brand-orange py-2 rounded-xl transition-colors cursor-pointer text-center"
               >
                 Reception Desk
               </button>
               <button
+                type="button"
                 onClick={() => handleAutoFill("admin")}
                 className="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-2 rounded-xl transition-colors cursor-pointer text-center"
               >

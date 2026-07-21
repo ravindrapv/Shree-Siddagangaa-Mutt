@@ -32,12 +32,35 @@ enum PaymentMethod {
   MIXED
 }
 
+model GuestHouse {
+  id        String   @id @default(uuid())
+  code      String   @unique // KALYANI or YATHRI
+  name      String
+  nameKn    String
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  guests    Guest[]
+  rooms     Room[]
+  bookings  Booking[]
+  payments  Payment[]
+  auditLogs AuditLog[]
+  settings  Setting[]
+}
+
 model User {
   id           String     @id @default(uuid())
   username     String     @unique
   name         String
   passwordHash String
   role         Role       @default(RECEPTION)
+  guestHouseId String
+  guestHouse   GuestHouse @relation(fields: [guestHouseId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   auditLogs    AuditLog[]
@@ -45,8 +68,10 @@ model User {
 
 model Guest {
   id               String    @id @default(uuid())
+  guestHouseId     String
+  guestHouse       GuestHouse @relation(fields: [guestHouseId], references: [id])
   name             String
-  phone            String    @unique
+  phone            String
   address          String
   gender           String
   age              Int
@@ -55,7 +80,7 @@ model Guest {
   state            String    @default("Karnataka")
   pin              String
   idType           String    // Aadhaar Card, Voter ID, PAN Card, Passport
-  idNumber         String    @unique
+  idNumber         String
   emergencyContact String?
   photoUrl         String?
   idCardPhotoUrl   String?
@@ -63,25 +88,34 @@ model Guest {
   bookings         Booking[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  @@unique([guestHouseId, phone])
+  @@unique([guestHouseId, idNumber])
 }
 
 model Room {
-  id          String     @id @default(uuid())
-  roomNumber  String     @unique
-  floor       String     // Ground Floor, First Floor, Second Floor
-  type        String     // Standard Non-AC, Deluxe AC, etc.
-  status      RoomStatus @default(AVAILABLE)
-  capacity    Int        @default(2)
-  ratePerDay  Float
-  facilities  String[]   // AC, TV, Geyser, etc.
-  bookings    Booking[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id           String     @id @default(uuid())
+  guestHouseId String
+  guestHouse   GuestHouse @relation(fields: [guestHouseId], references: [id])
+  roomNumber   String
+  floor        String     // Ground Floor, First Floor, Second Floor
+  type         String     // Standard Room, etc.
+  status       RoomStatus @default(AVAILABLE)
+  capacity     Int        @default(2)
+  ratePerDay   Float
+  facilities   String[]   // AC, TV, Geyser, etc.
+  bookings     Booking[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([guestHouseId, roomNumber])
 }
 
 model Booking {
   id            String        @id @default(uuid())
-  receiptNo     String        @unique // e.g., RCP1250
+  guestHouseId  String
+  guestHouse    GuestHouse    @relation(fields: [guestHouseId], references: [id])
+  receiptNo     String        // e.g., RCP1250
   guestId       String
   guest         Guest         @relation(fields: [guestId], references: [id])
   roomId        String
@@ -100,10 +134,14 @@ model Booking {
   payments      Payment[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  @@unique([guestHouseId, receiptNo])
 }
 
 model Payment {
   id            String        @id @default(uuid())
+  guestHouseId  String
+  guestHouse    GuestHouse    @relation(fields: [guestHouseId], references: [id])
   bookingId     String
   booking       Booking       @relation(fields: [bookingId], references: [id])
   amount        Float
@@ -115,17 +153,23 @@ model Payment {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  action    String
-  details   String
-  timestamp DateTime @default(now())
+  id           String   @id @default(uuid())
+  guestHouseId String
+  guestHouse   GuestHouse @relation(fields: [guestHouseId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  action       String
+  details      String
+  timestamp    DateTime @default(now())
 }
 
 model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  guestHouseId String
+  guestHouse   GuestHouse @relation(fields: [guestHouseId], references: [id])
+  key          String
+  value        String
+  updatedAt    DateTime @updatedAt
+
+  @@unique([guestHouseId, key])
 }

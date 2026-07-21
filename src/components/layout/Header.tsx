@@ -14,10 +14,12 @@ export default function Header() {
   const [userDropdown, setUserDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeStaysEnding, setActiveStaysEnding] = useState<any[]>([]);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
   const [activeUser, setActiveUser] = useState({
     name: "Reception Desk",
     role: "RECEPTION",
     building: "Kalyani Guest House",
+    buildingKn: "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ",
     username: "kalyani_reception"
   });
 
@@ -31,6 +33,7 @@ export default function Header() {
     const username = getCookie("guesthouse_username");
     const role = getCookie("guesthouse_role");
     const building = getCookie("guesthouse_building");
+    const buildingKn = getCookie("guesthouse_building_kn");
     const name = getCookie("guesthouse_name");
     
     if (username) {
@@ -38,6 +41,7 @@ export default function Header() {
         name: name || (role === "ADMIN" ? "Office Administrator" : "Reception Desk"),
         role: role || "RECEPTION",
         building: building || "Kalyani Guest House",
+        buildingKn: buildingKn || "ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹ",
         username: username
       });
     }
@@ -115,9 +119,7 @@ export default function Header() {
         <div>
           <h1 className="text-lg font-bold tracking-wide leading-none">{t("templeName")}</h1>
           <p className="text-xs text-orange-100 font-medium">
-            {activeUser.building === "Yathri Nivasa"
-              ? (language === "kn" ? "ಯಾತ್ರಿ ನಿವಾಸ" : "Yathri Nivasa")
-              : t("guestHouseName")}
+            {language === "kn" ? activeUser.buildingKn : activeUser.building}
           </p>
         </div>
       </div>
@@ -180,12 +182,13 @@ export default function Header() {
                   <p className="text-xs text-gray-400">Signed in as</p>
                   <p className="text-sm font-semibold truncate">{activeUser.name}</p>
                 </div>
-                <button
+                 <button
                   onClick={() => {
                     setActiveUser({
                       name: "Office Administrator",
                       role: "ADMIN",
                       building: activeUser.building,
+                      buildingKn: activeUser.buildingKn,
                       username: "admin"
                     });
                     setUserDropdown(false);
@@ -201,6 +204,7 @@ export default function Header() {
                       name: "Reception Desk",
                       role: "RECEPTION",
                       building: activeUser.building,
+                      buildingKn: activeUser.buildingKn,
                       username: "reception"
                     });
                     setUserDropdown(false);
@@ -297,13 +301,20 @@ export default function Header() {
                         >
                           Checkout
                         </Link>
-                        <Link
-                          href={`/guests/${b.guestId || b.id}`}
-                          onClick={() => setShowNotifications(false)}
-                          className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-center text-[10px] font-bold py-1.5 rounded-lg transition-colors cursor-pointer"
+                        <button
+                          onClick={() => {
+                            setLoadingProfileId(b.guestId || b.id);
+                            setShowNotifications(false);
+                            router.push(`/guests/${b.guestId || b.id}`);
+                          }}
+                          disabled={loadingProfileId !== null}
+                          className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-center text-[10px] font-bold py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50"
                         >
+                          {loadingProfileId === (b.guestId || b.id) && (
+                            <span className="w-2.5 h-2.5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+                          )}
                           View Profile
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   );

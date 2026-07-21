@@ -1,4 +1,4 @@
-import { dbService } from "@/lib/db-service";
+import { getGuests } from "@/app/actions";
 import GuestsClient from "./GuestsClient";
 
 export const revalidate = 0;
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function GuestsPage() {
-  const data = await dbService.getGuests();
+  const data = await getGuests();
 
   return (
     <GuestsClient initialGuests={data} />

@@ -5,6 +5,7 @@ import path from "path";
 // Types matching Prisma models
 export interface Guest {
   id: string;
+  guestHouseId: string;
   name: string;
   phone: string;
   address: string;
@@ -26,6 +27,7 @@ export interface Guest {
 
 export interface Room {
   id: string;
+  guestHouseId: string;
   roomNumber: string;
   floor: string;
   type: string;
@@ -39,6 +41,7 @@ export interface Room {
 
 export interface Booking {
   id: string;
+  guestHouseId: string;
   receiptNo: string;
   guestId: string;
   roomId: string;
@@ -64,6 +67,7 @@ export interface Booking {
 
 export interface Payment {
   id: string;
+  guestHouseId: string;
   bookingId: string;
   amount: number;
   method: 'CASH' | 'UPI' | 'CARD' | 'MIXED';
@@ -75,6 +79,7 @@ export interface Payment {
 
 export interface AuditLog {
   id: string;
+  guestHouseId: string;
   userId: string;
   action: string;
   details: string;
@@ -84,14 +89,14 @@ export interface AuditLog {
 
 export interface Setting {
   id: string;
+  guestHouseId: string;
   key: string;
   value: string;
 }
 
-// -------------------------------------------------------------
-// LOCAL JSON FILE MOCK DATABASE IMPLEMENTATION
-// -------------------------------------------------------------
-const MOCK_DB_FILE = path.join(process.cwd(), "prisma", "mock-db.json");
+// Static tenant constants matching seeder
+export const KALYANI_ID = "a1c8f615-5e60-449e-b8d4-539c2bb0e4cf";
+export const YATHRI_ID = "b2d9a726-6f71-55af-c9e5-649d3cc1f5d0";
 
 interface MockDBData {
   guests: Guest[];
@@ -102,6 +107,8 @@ interface MockDBData {
   settings: Setting[];
 }
 
+const MOCK_DB_FILE = path.join(process.cwd(), "prisma", "mock-db.json");
+
 // Check if we are running in DEMO_MODE
 const isDemoMode = () => {
   return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -110,36 +117,65 @@ const isDemoMode = () => {
 // Seed initial mock data for the JSON database
 const getInitialMockData = (): MockDBData => {
   const rooms: Room[] = [];
-  for (let i = 1; i <= 36; i++) {
-    let floor = "Ground Floor";
-    if (i > 12 && i <= 24) floor = "First Floor";
-    else if (i > 24) floor = "Second Floor";
-    
-    let capacity = 2;
-    if (i % 3 === 0) capacity = 3;
-    else if (i % 5 === 0) capacity = 4;
-    
-    let facilities = ["Hot Water"];
-    if (i % 2 === 0) facilities.push("TV");
-    if (i % 4 === 0) facilities.push("WiFi");
-    
+  
+  // Kalyani rooms (KALYANI_ID)
+  const kalyaniRoomNumbers = [
+    ...[1, 2, 3, 4, 5, 6, 19, 20, 21, 22, 23, 24].map(n => ({ num: `${n}`, floor: "Ground Floor" })),
+    ...[7, 8, 9, 10, 11, 12, 25, 26, 27, 28, 29, 30].map(n => ({ num: `${n}`, floor: "First Floor" })),
+    ...[13, 14, 15, 16, 17, 18, 31, 32, 33, 34, 35, 36].map(n => ({ num: `${n}`, floor: "Second Floor" })),
+  ];
+  kalyaniRoomNumbers.forEach((r, idx) => {
+    const val = parseInt(r.num);
+    const capacity = val % 3 === 0 ? 3 : val % 5 === 0 ? 4 : 2;
+    const facilities = ["Hot Water"];
+    if (val % 2 === 0) facilities.push("TV");
+    if (val % 4 === 0) facilities.push("WiFi");
     rooms.push({
-      id: `r${i}`,
-      roomNumber: `${i}`,
-      floor,
-      type: "Room",
+      id: `r_k_${idx}`,
+      guestHouseId: KALYANI_ID,
+      roomNumber: r.num,
+      floor: r.floor,
+      type: "Standard Room",
       status: "AVAILABLE",
       capacity,
       ratePerDay: 300,
       facilities,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
-  }
+  });
+
+  // Yathri rooms (YATHRI_ID)
+  const yathriRoomNumbers = [
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => ({ num: n < 10 ? `0${n}` : `${n}`, floor: "Ground Floor" })),
+    ...[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(n => ({ num: `${n}`, floor: "First Floor" })),
+    ...[28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41].map(n => ({ num: `${n}`, floor: "Second Floor" })),
+  ];
+  yathriRoomNumbers.forEach((r, idx) => {
+    const val = parseInt(r.num);
+    const capacity = val % 3 === 0 ? 3 : val % 5 === 0 ? 4 : 2;
+    const facilities = ["Hot Water"];
+    if (val % 2 === 0) facilities.push("TV");
+    if (val % 4 === 0) facilities.push("WiFi");
+    rooms.push({
+      id: `r_y_${idx}`,
+      guestHouseId: YATHRI_ID,
+      roomNumber: r.num,
+      floor: r.floor,
+      type: "Standard Room",
+      status: "AVAILABLE",
+      capacity,
+      ratePerDay: 300,
+      facilities,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  });
 
   const guests: Guest[] = [
     {
       id: "g1",
+      guestHouseId: KALYANI_ID,
       name: "Ramesh H",
       phone: "9886543210",
       address: "#123, 2nd Cross, Gandhi Nagar, Tumkur - 572101",
@@ -150,154 +186,31 @@ const getInitialMockData = (): MockDBData => {
       state: "Karnataka",
       pin: "572101",
       idType: "Aadhaar Card",
-      idNumber: "1234 5678 9012",
-      emergencyContact: "9886543211",
-      familyMembers: [{ name: "Sita H", age: 38, relation: "Wife" }, { name: "Kiran H", age: 12, relation: "Son" }],
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: "g2",
-      name: "Sharanappa Gowda",
-      phone: "9900887766",
-      address: "Saraswathipuram, Mysore - 570009",
-      gender: "Male",
-      age: 55,
-      occupation: "Farmer",
-      district: "Mysore",
-      state: "Karnataka",
-      pin: "570009",
-      idType: "Voter ID",
-      idNumber: "ABC9876543",
-      emergencyContact: "9900887760",
-      familyMembers: [],
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: "g3",
-      name: "Manjula Devi",
-      phone: "9448012345",
-      address: "Malleshwaram, Bangalore - 560003",
-      gender: "Female",
-      age: 48,
-      occupation: "Homemaker",
-      district: "Bangalore",
-      state: "Karnataka",
-      pin: "560003",
-      idType: "Aadhaar Card",
-      idNumber: "8888 7777 6666",
-      emergencyContact: "9448012346",
-      familyMembers: [{ name: "Prashanth", age: 22, relation: "Son" }],
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      idNumber: "123456789012",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
   ];
 
-  // Map room occupancy
-  const bookings: Booking[] = [
-    {
-      id: "b1",
-      receiptNo: "RCP1248",
-      guestId: "g1",
-      roomId: "r102",
-      checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      checkOutDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-      noOfDays: 2,
-      noOfPersons: 3,
-      discount: 0,
-      advancePaid: 200,
-      totalAmount: 400,
-      balanceAmount: 200,
-      status: "ACTIVE",
-      paymentMethod: "CASH",
-      paymentNote: "Advance payment of 200 received.",
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: "b2",
-      receiptNo: "RCP1249",
-      guestId: "g2",
-      roomId: "r202",
-      checkInDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      checkOutDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-      noOfDays: 3,
-      noOfPersons: 1,
-      discount: 0,
-      advancePaid: 400,
-      totalAmount: 1200,
-      balanceAmount: 800,
-      status: "ACTIVE",
-      paymentMethod: "UPI",
-      paymentNote: "Paid ₹400 advance via UPI GPay",
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: "b3",
-      receiptNo: "RCP1245",
-      guestId: "g3",
-      roomId: "r301",
-      checkInDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-      checkOutDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      noOfDays: 2,
-      noOfPersons: 2,
-      discount: 0,
-      advancePaid: 400,
-      totalAmount: 400,
-      balanceAmount: 0,
-      status: "CHECKED_OUT",
-      paymentMethod: "CASH",
-      paymentNote: "Full payment received.",
-      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: "b4",
-      receiptNo: "RCP1246",
-      guestId: "g1",
-      roomId: "r303",
-      checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      checkOutDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-      noOfDays: 3,
-      noOfPersons: 2,
-      discount: 50,
-      advancePaid: 300,
-      totalAmount: 600,
-      balanceAmount: 250,
-      status: "ACTIVE",
-      paymentMethod: "MIXED",
-      paymentNote: "Cash ₹200 + UPI ₹100",
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-    }
-  ];
-
-  const payments: Payment[] = [
-    { id: "p1", bookingId: "b1", amount: 200, method: "CASH", receiptNo: "RCP1248", date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), notes: "Booking Advance", createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-    { id: "p2", bookingId: "b2", amount: 400, method: "UPI", receiptNo: "RCP1249", date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), notes: "Booking Advance", createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-    { id: "p3", bookingId: "b3", amount: 400, method: "CASH", receiptNo: "RCP1245", date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), notes: "Booking Advance", createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
-    { id: "p4", bookingId: "b4", amount: 300, method: "MIXED", receiptNo: "RCP1246", date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), notes: "Booking Advance", createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) }
-  ];
-
-  const auditLogs: AuditLog[] = [
-    { id: "l1", userId: "admin-id", action: "ROOM_STATUS_CHANGE", details: "Room 104 status set to CLEANING by Admin", timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000) },
-    { id: "l2", userId: "admin-id", action: "ROOM_STATUS_CHANGE", details: "Room 105 status set to MAINTENANCE by Admin", timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000) },
-    { id: "l3", userId: "admin-id", action: "BOOKING_CREATE", details: "Booking RCP1249 created for Sharanappa Gowda (Room 202)", timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }
-  ];
-
+  const bookings: Booking[] = [];
+  const payments: Payment[] = [];
+  const auditLogs: AuditLog[] = [];
+  
   const settings: Setting[] = [
-    { id: "s1", key: "templeName", value: "Siddaganga Mata Tumkur" },
-    { id: "s2", key: "templeAddress", value: "Siddaganga Mutt Road, Tumkur, Karnataka, India - 572104" },
-    { id: "s3", key: "contactNumber", value: "+91 816 2282247" },
-    { id: "s4", key: "receiptFooter", value: "This is a computer-generated receipt. Thank you for your support. Have a safe & blessed stay." }
+    { id: "s1", guestHouseId: KALYANI_ID, key: "templeName", value: "Kalyani Guest House - Siddaganga Mutt" },
+    { id: "s2", guestHouseId: KALYANI_ID, key: "templeAddress", value: "ಕ್ಯಾತಸಂದ್ರ, ಸಿದ್ದಗಂಗಾ ಮಠ, ತುಮಕೂರು ಜಿಲ್ಲೆ. (KYATSANDRA, Siddaganga Math, Tumkur District.)" },
+    { id: "s3", guestHouseId: KALYANI_ID, key: "contactNumber", value: "+91 816 2282247" },
+    { id: "s4", guestHouseId: KALYANI_ID, key: "receiptFooter", value: "ಈ ರಶೀದಿಯು ಕಲ್ಯಾಣಿ ಅತಿಥಿ ಗೃಹಕ್ಕೆ ಅನ್ವಯಿಸುತ್ತದೆ. ತಮಗೆ ಸುಖಕರ ವಾಸ್ತವ್ಯವನ್ನು ಹಾರೈಸುತ್ತೇವೆ." },
+
+    { id: "s5", guestHouseId: YATHRI_ID, key: "templeName", value: "Yathri Nivasa - Siddaganga Mutt" },
+    { id: "s6", guestHouseId: YATHRI_ID, key: "templeAddress", value: "ಕ್ಯಾತಸಂದ್ರ, ಸಿದ್ದಗಂಗಾ ಮಠ, ತುಮಕೂರು ಜಿಲ್ಲೆ. (KYATSANDRA, Siddaganga Math, Tumkur District.)" },
+    { id: "s7", guestHouseId: YATHRI_ID, key: "contactNumber", value: "+91 816 2282247" },
+    { id: "s8", guestHouseId: YATHRI_ID, key: "receiptFooter", value: "ಈ ರಶೀದಿಯು ಯಾತ್ರಿ ನಿವಾಸಕ್ಕೆ ಅನ್ವಯಿಸುತ್ತದೆ. ನಿಮ್ಮ ಯಾತ್ರೆ ಶುಭದಾಯಕವಾಗಿರಲಿ." },
   ];
 
   return { guests, rooms, bookings, payments, auditLogs, settings };
 };
 
-// Reading data from file helper
 const readMockDB = (): MockDBData => {
   try {
     if (!fs.existsSync(MOCK_DB_FILE)) {
@@ -310,14 +223,69 @@ const readMockDB = (): MockDBData => {
       return initial;
     }
     const raw = fs.readFileSync(MOCK_DB_FILE, "utf-8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    
+    // Auto-migrate old mock files to hold KALYANI_ID if missing guestHouseId
+    let migrated = false;
+    if (Array.isArray(parsed.rooms)) {
+      parsed.rooms.forEach((r: any) => {
+        if (!r.guestHouseId) {
+          r.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+    if (Array.isArray(parsed.guests)) {
+      parsed.guests.forEach((g: any) => {
+        if (!g.guestHouseId) {
+          g.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+    if (Array.isArray(parsed.bookings)) {
+      parsed.bookings.forEach((b: any) => {
+        if (!b.guestHouseId) {
+          b.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+    if (Array.isArray(parsed.payments)) {
+      parsed.payments.forEach((p: any) => {
+        if (!p.guestHouseId) {
+          p.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+    if (Array.isArray(parsed.auditLogs)) {
+      parsed.auditLogs.forEach((l: any) => {
+        if (!l.guestHouseId) {
+          l.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+    if (Array.isArray(parsed.settings)) {
+      parsed.settings.forEach((s: any) => {
+        if (!s.guestHouseId) {
+          s.guestHouseId = KALYANI_ID;
+          migrated = true;
+        }
+      });
+    }
+
+    if (migrated) {
+      fs.writeFileSync(MOCK_DB_FILE, JSON.stringify(parsed, null, 2));
+    }
+    return parsed;
   } catch (error) {
     console.error("Error reading JSON mock db:", error);
     return getInitialMockData();
   }
 };
 
-// Writing data to file helper
 const writeMockDB = (data: MockDBData) => {
   try {
     const dir = path.dirname(MOCK_DB_FILE);
@@ -335,24 +303,27 @@ const writeMockDB = (data: MockDBData) => {
 // -------------------------------------------------------------
 export const dbService = {
   // --- GUESTS ---
-  async getGuests(): Promise<Guest[]> {
+  async getGuests(guestHouseId: string): Promise<Guest[]> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.guests.map(g => {
-        const activeStays = db.bookings.filter(b => b.guestId === g.id && b.status === "ACTIVE");
-        const rooms = activeStays.map(b => db.rooms.find(r => r.id === b.roomId)?.roomNumber).filter(Boolean);
-        return { 
-          ...g, 
-          hasActiveStay: activeStays.length > 0,
-          activeRoomNumbers: rooms.join(", ") 
-        } as any;
-      });
+      return db.guests
+        .filter(g => g.guestHouseId === guestHouseId)
+        .map(g => {
+          const activeStays = db.bookings.filter(b => b.guestHouseId === guestHouseId && b.guestId === g.id && b.status === "ACTIVE");
+          const rooms = activeStays.map(b => db.rooms.find(r => r.id === b.roomId)?.roomNumber).filter(Boolean);
+          return { 
+            ...g, 
+            hasActiveStay: activeStays.length > 0,
+            activeRoomNumbers: rooms.join(", ") 
+          } as any;
+        });
     }
     const raw = await prisma.guest.findMany({
+      where: { guestHouseId },
       orderBy: { createdAt: "desc" }
     });
     const activeBookings = await prisma.booking.findMany({
-      where: { status: "ACTIVE" },
+      where: { guestHouseId, status: "ACTIVE" },
       include: { room: true }
     });
     return raw.map((g: any) => {
@@ -367,12 +338,14 @@ export const dbService = {
     }) as unknown as Guest[];
   },
 
-  async getGuest(id: string): Promise<Guest | null> {
+  async getGuest(id: string, guestHouseId: string): Promise<Guest | null> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.guests.find(g => g.id === id) || null;
+      return db.guests.find(g => g.id === id && g.guestHouseId === guestHouseId) || null;
     }
-    const g = await prisma.guest.findUnique({ where: { id } });
+    const g = await prisma.guest.findFirst({
+      where: { id, guestHouseId }
+    });
     if (!g) return null;
     return {
       ...g,
@@ -380,12 +353,14 @@ export const dbService = {
     } as unknown as Guest;
   },
 
-  async getGuestByPhone(phone: string): Promise<Guest | null> {
+  async getGuestByPhone(phone: string, guestHouseId: string): Promise<Guest | null> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.guests.find(g => g.phone === phone) || null;
+      return db.guests.find(g => g.phone === phone && g.guestHouseId === guestHouseId) || null;
     }
-    const g = await prisma.guest.findUnique({ where: { phone } });
+    const g = await prisma.guest.findFirst({
+      where: { phone, guestHouseId }
+    });
     if (!g) return null;
     return {
       ...g,
@@ -393,7 +368,7 @@ export const dbService = {
     } as unknown as Guest;
   },
 
-  async searchGuest(query: string): Promise<Guest[]> {
+  async searchGuest(query: string, guestHouseId: string): Promise<Guest[]> {
     const cleanQuery = query.toLowerCase().trim();
     if (!cleanQuery) return [];
 
@@ -401,12 +376,13 @@ export const dbService = {
       const db = readMockDB();
       const filtered = db.guests.filter(
         g =>
-          g.name.toLowerCase().includes(cleanQuery) ||
-          g.phone.includes(cleanQuery) ||
-          g.idNumber.toLowerCase().includes(cleanQuery)
+          g.guestHouseId === guestHouseId &&
+          (g.name.toLowerCase().includes(cleanQuery) ||
+           g.phone.includes(cleanQuery) ||
+           g.idNumber.toLowerCase().includes(cleanQuery))
       );
       return filtered.map(g => {
-        const activeBooking = db.bookings.find(b => b.guestId === g.id && b.status === "ACTIVE");
+        const activeBooking = db.bookings.find(b => b.guestHouseId === guestHouseId && b.guestId === g.id && b.status === "ACTIVE");
         return {
           ...g,
           hasActiveStay: !!activeBooking,
@@ -417,6 +393,7 @@ export const dbService = {
 
     const raw = await prisma.guest.findMany({
       where: {
+        guestHouseId,
         OR: [
           { name: { contains: cleanQuery, mode: "insensitive" } },
           { phone: { contains: cleanQuery } },
@@ -425,7 +402,7 @@ export const dbService = {
       }
     });
     const activeBookings = await prisma.booking.findMany({
-      where: { status: "ACTIVE" }
+      where: { guestHouseId, status: "ACTIVE" }
     });
     return raw.map((g: any) => {
       const activeBooking = activeBookings.find((b: any) => b.guestId === g.id);
@@ -438,7 +415,7 @@ export const dbService = {
     }) as unknown as Guest[];
   },
 
-  async createGuest(data: Omit<Guest, "id" | "createdAt" | "updatedAt">): Promise<Guest> {
+  async createGuest(data: Omit<Guest, "id" | "guestHouseId" | "createdAt" | "updatedAt">, guestHouseId: string): Promise<Guest> {
     const cleanPhone = data.phone.replace(/\D/g, "");
     if (cleanPhone.length !== 10) {
       throw new Error("Phone number must be exactly 10 digits");
@@ -452,19 +429,16 @@ export const dbService = {
       data.idNumber = cleanAadhaar;
     }
 
-    const sanitizedData = { ...data, phone: cleanPhone };
+    const sanitizedData = { ...data, phone: cleanPhone, guestHouseId };
 
     if (isDemoMode()) {
       const db = readMockDB();
-      const existing = db.guests.find(g => g.phone === sanitizedData.phone || g.idNumber === sanitizedData.idNumber);
-      if (existing) {
-        const activeBooking = db.bookings.find(b => b.guestId === existing.id && b.status === "ACTIVE");
-        if (activeBooking) {
-          const room = db.rooms.find(r => r.id === activeBooking.roomId);
-          throw new Error(`This devotee (${existing.name}) has an active stay in Room ${room?.roomNumber || ""}. Cannot check in again.`);
-        }
-        return existing;
+      
+      const duplicate = db.guests.find(g => g.phone === cleanPhone && g.guestHouseId === guestHouseId);
+      if (duplicate) {
+        throw new Error("A guest with this phone number already exists in this Guest House");
       }
+
       const newGuest: Guest = {
         ...sanitizedData,
         id: "g_" + Math.random().toString(36).substr(2, 9),
@@ -476,138 +450,128 @@ export const dbService = {
       return newGuest;
     }
 
-    const existing = await prisma.guest.findFirst({
+    // Check PostgreSQL unique constraint
+    const duplicate = await prisma.guest.findUnique({
       where: {
-        OR: [
-          { phone: sanitizedData.phone },
-          { idNumber: sanitizedData.idNumber }
-        ]
+        guestHouseId_phone: { guestHouseId, phone: cleanPhone }
       }
     });
-    if (existing) {
-      const activeBooking = await prisma.booking.findFirst({
-        where: {
-          guestId: existing.id,
-          status: "ACTIVE"
-        },
-        include: { room: true }
-      });
-      if (activeBooking) {
-        throw new Error(`This devotee (${existing.name}) has an active stay in Room ${activeBooking.room?.roomNumber || ""}. Cannot check in again.`);
-      }
+    if (duplicate) {
+      throw new Error("A guest with this phone number already exists in this Guest House");
     }
 
-    const g = await prisma.guest.upsert({
-      where: { phone: sanitizedData.phone },
-      update: {
-        ...sanitizedData,
-        familyMembers: sanitizedData.familyMembers ? JSON.parse(JSON.stringify(sanitizedData.familyMembers)) : undefined
-      },
-      create: {
-        ...sanitizedData,
-        familyMembers: sanitizedData.familyMembers ? JSON.parse(JSON.stringify(sanitizedData.familyMembers)) : undefined
+    const created = await prisma.guest.create({
+      data: {
+        guestHouseId,
+        name: data.name,
+        phone: cleanPhone,
+        address: data.address,
+        gender: data.gender,
+        age: data.age,
+        occupation: data.occupation,
+        district: data.district,
+        state: data.state,
+        pin: data.pin,
+        idType: data.idType,
+        idNumber: data.idNumber,
+        emergencyContact: data.emergencyContact,
+        photoUrl: data.photoUrl,
+        idCardPhotoUrl: data.idCardPhotoUrl,
+        familyMembers: data.familyMembers ? JSON.parse(JSON.stringify(data.familyMembers)) : []
       }
     });
-    return {
-      ...g,
-      familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
-    } as unknown as Guest;
+    return created as unknown as Guest;
   },
 
-  async updateGuestPhoto(guestId: string, photoUrl: string): Promise<Guest> {
+  async updateGuestPhoto(guestId: string, photoUrl: string, guestHouseId: string): Promise<Guest> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const guest = db.guests.find(g => g.id === guestId);
-      if (!guest) {
-        throw new Error("Guest profile not found");
-      }
-      guest.photoUrl = photoUrl;
-      guest.updatedAt = new Date().toISOString();
+      const idx = db.guests.findIndex(g => g.id === guestId && g.guestHouseId === guestHouseId);
+      if (idx === -1) throw new Error("Guest profile not found");
+      db.guests[idx].photoUrl = photoUrl;
+      db.guests[idx].updatedAt = new Date().toISOString();
       writeMockDB(db);
-      return guest;
+      return db.guests[idx];
     }
     const g = await prisma.guest.update({
       where: { id: guestId },
       data: { photoUrl }
     });
-    return {
-      ...g,
-      familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
-    } as unknown as Guest;
+    return g as unknown as Guest;
   },
 
-  async updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: string): Promise<Guest> {
+  async updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: string, guestHouseId: string): Promise<Guest> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const guest = db.guests.find(g => g.id === guestId);
-      if (!guest) {
-        throw new Error("Guest profile not found");
-      }
-      guest.idCardPhotoUrl = idCardPhotoUrl;
-      guest.updatedAt = new Date().toISOString();
+      const idx = db.guests.findIndex(g => g.id === guestId && g.guestHouseId === guestHouseId);
+      if (idx === -1) throw new Error("Guest profile not found");
+      db.guests[idx].idCardPhotoUrl = idCardPhotoUrl;
+      db.guests[idx].updatedAt = new Date().toISOString();
       writeMockDB(db);
-      return guest;
+      return db.guests[idx];
     }
     const g = await prisma.guest.update({
       where: { id: guestId },
       data: { idCardPhotoUrl }
     });
-    return {
-      ...g,
-      familyMembers: g.familyMembers ? JSON.parse(JSON.stringify(g.familyMembers)) : []
-    } as unknown as Guest;
+    return g as unknown as Guest;
   },
 
   // --- ROOMS ---
-  async getRooms(): Promise<Room[]> {
+  async getRooms(guestHouseId: string): Promise<Room[]> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.rooms.map(r => {
-        if (r.status !== "OCCUPIED") return r;
-        const activeBooking = db.bookings.find(b => b.roomId === r.id && b.status === "ACTIVE");
-        if (!activeBooking) return r;
-        const guest = db.guests.find(g => g.id === activeBooking.guestId);
+      const rooms = db.rooms.filter(r => r.guestHouseId === guestHouseId);
+      return rooms.map(r => {
+        const activeBooking = db.bookings.find(b => b.guestHouseId === guestHouseId && b.roomId === r.id && b.status === "ACTIVE");
+        if (activeBooking && r.status === "OCCUPIED") {
+          const guest = db.guests.find(g => g.id === activeBooking.guestId);
+          return {
+            ...r,
+            occupiedDetails: {
+              guestName: guest?.name || "Unknown Guest",
+              checkOutDate: activeBooking.checkOutDate,
+              receiptNo: activeBooking.receiptNo
+            }
+          } as any;
+        }
+        return r;
+      });
+    }
+
+    const rooms = await prisma.room.findMany({
+      where: { guestHouseId },
+      orderBy: { roomNumber: "asc" }
+    });
+    const activeBookings = await prisma.booking.findMany({
+      where: { guestHouseId, status: "ACTIVE" },
+      include: { guest: true }
+    });
+    return rooms.map((r: any) => {
+      const activeBooking = activeBookings.find((b: any) => b.roomId === r.id);
+      if (activeBooking && r.status === "OCCUPIED") {
         return {
           ...r,
           occupiedDetails: {
-            guestName: guest?.name || "Unknown Guest",
-            checkOutDate: activeBooking.checkOutDate,
+            guestName: activeBooking.guest?.name || "Unknown Guest",
+            checkOutDate: activeBooking.checkOutDate.toISOString(),
             receiptNo: activeBooking.receiptNo
           }
-        } as any;
-      });
-    }
-    const rooms = await prisma.room.findMany({
-      orderBy: { roomNumber: "asc" }
-    });
-    const bookings = await prisma.booking.findMany({
-      where: { status: "ACTIVE" },
-      include: { guest: true }
-    });
-    return rooms.map(r => {
-      if (r.status !== "OCCUPIED") return r;
-      const b = bookings.find(x => x.roomId === r.id);
-      if (!b) return r;
-      return {
-        ...r,
-        occupiedDetails: {
-          guestName: b.guest?.name || "Unknown Guest",
-          checkOutDate: b.checkOutDate,
-          receiptNo: b.receiptNo
-        }
-      };
+        };
+      }
+      return r;
     }) as unknown as Room[];
   },
 
-  async updateRoomStatus(id: string, status: Room['status']): Promise<Room> {
+  async updateRoomStatus(id: string, status: Room['status'], guestHouseId: string): Promise<Room> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const rIdx = db.rooms.findIndex(r => r.id === id);
-      if (rIdx === -1) throw new Error("Room not found");
-      db.rooms[rIdx].status = status;
-      db.rooms[rIdx].updatedAt = new Date().toISOString();
+      const idx = db.rooms.findIndex(r => r.id === id && r.guestHouseId === guestHouseId);
+      if (idx === -1) throw new Error("Room not found");
+      db.rooms[idx].status = status;
+      db.rooms[idx].updatedAt = new Date().toISOString();
       writeMockDB(db);
-      return db.rooms[rIdx];
+      return db.rooms[idx];
     }
     return await prisma.room.update({
       where: { id },
@@ -616,92 +580,84 @@ export const dbService = {
   },
 
   // --- BOOKINGS ---
-  async getBookings(): Promise<Booking[]> {
+  async getBookings(guestHouseId: string): Promise<Booking[]> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.bookings.map((b: any) => ({
-        ...b,
-        guest: db.guests.find(g => g.id === b.guestId),
-        room: db.rooms.find(r => r.id === b.roomId),
-        payments: db.payments.filter(p => p.bookingId === b.id)
-      }));
+      return db.bookings
+        .filter(b => b.guestHouseId === guestHouseId)
+        .map(b => ({
+          ...b,
+          guest: db.guests.find(g => g.id === b.guestId),
+          room: db.rooms.find(r => r.id === b.roomId),
+          payments: db.payments.filter(p => p.bookingId === b.id)
+        })) as unknown as Booking[];
     }
     return await prisma.booking.findMany({
+      where: { guestHouseId },
       include: { guest: true, room: true, payments: true },
       orderBy: { createdAt: "desc" }
     }) as unknown as Booking[];
   },
 
-  async getBooking(id: string): Promise<Booking | null> {
+  async getBooking(id: string, guestHouseId: string): Promise<Booking | null> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const b = db.bookings.find(x => x.id === id);
+      const b = db.bookings.find(x => x.id === id && x.guestHouseId === guestHouseId);
       if (!b) return null;
       return {
         ...b,
         guest: db.guests.find(g => g.id === b.guestId),
         room: db.rooms.find(r => r.id === b.roomId),
         payments: db.payments.filter(p => p.bookingId === b.id)
-      };
+      } as unknown as Booking;
     }
-    return await prisma.booking.findUnique({
-      where: { id },
+    return await prisma.booking.findFirst({
+      where: { id, guestHouseId },
       include: { guest: true, room: true, payments: true }
     }) as unknown as Booking;
   },
 
-  async getBookingByReceipt(receiptNo: string): Promise<any> {
-    const cleanReceipt = receiptNo.trim();
+  async getBookingByReceipt(receiptNo: string, guestHouseId: string): Promise<any> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const b = db.bookings.find(x => 
-        x.receiptNo.toLowerCase() === cleanReceipt.toLowerCase() ||
-        x.receiptNo.toLowerCase().startsWith(cleanReceipt.toLowerCase() + "/") ||
-        (x.status === "ACTIVE" && db.rooms.find(r => r.id === x.roomId)?.roomNumber === cleanReceipt)
-      );
-      if (!b) return null;
+      const baseReceipt = receiptNo.split("/")[0];
+      const matchingBooking = db.bookings.find(b => b.guestHouseId === guestHouseId && b.receiptNo === baseReceipt);
+      if (!matchingBooking) return null;
 
-      const baseReceipt = b.receiptNo.split("/")[0];
-      const relatedBookings = db.bookings.filter(x => 
-        x.receiptNo === baseReceipt || x.receiptNo.startsWith(baseReceipt + "/")
+      const relatedBookings = db.bookings.filter(b => 
+        b.guestHouseId === guestHouseId &&
+        (b.receiptNo === baseReceipt || b.receiptNo.startsWith(baseReceipt + "/"))
       );
-      const rooms = relatedBookings.map(x => db.rooms.find(r => r.id === x.roomId)).filter(Boolean);
 
       const totalAmount = relatedBookings.reduce((sum, x) => sum + x.totalAmount, 0);
-      const balanceAmount = relatedBookings.reduce((sum, x) => sum + x.balanceAmount, 0);
       const advancePaid = relatedBookings.reduce((sum, x) => sum + x.advancePaid, 0);
+      const balanceAmount = relatedBookings.reduce((sum, x) => sum + x.balanceAmount, 0);
+
+      const rooms = relatedBookings.map(b => db.rooms.find(r => r.id === b.roomId)).filter(Boolean);
+      const allPayments = db.payments.filter(p => relatedBookings.some(b => b.id === p.bookingId));
 
       return {
-        ...b,
+        ...matchingBooking,
         totalAmount,
         balanceAmount,
         advancePaid,
-        guest: db.guests.find(g => g.id === b.guestId),
-        room: db.rooms.find(r => r.id === b.roomId),
-        payments: db.payments.filter(p => relatedBookings.some(x => x.id === p.bookingId)),
+        guest: db.guests.find(g => g.id === matchingBooking.guestId),
+        room: db.rooms.find(r => r.id === matchingBooking.roomId),
+        payments: allPayments,
         roomNumbers: rooms.map((r: any) => r.roomNumber).join(", ")
       } as any;
     }
 
+    const baseReceipt = receiptNo.split("/")[0];
     const matchingBooking = await prisma.booking.findFirst({
-      where: {
-        OR: [
-          { receiptNo: cleanReceipt },
-          { receiptNo: { startsWith: cleanReceipt + "/" } },
-          {
-            status: "ACTIVE",
-            room: { roomNumber: cleanReceipt }
-          }
-        ]
-      },
-      include: { guest: true, room: true }
+      where: { guestHouseId, receiptNo: baseReceipt },
+      include: { guest: true, room: true, payments: true }
     });
-
     if (!matchingBooking) return null;
 
-    const baseReceipt = matchingBooking.receiptNo.split("/")[0];
     const relatedBookings = await prisma.booking.findMany({
       where: {
+        guestHouseId,
         OR: [
           { receiptNo: baseReceipt },
           { receiptNo: { startsWith: baseReceipt + "/" } }
@@ -710,11 +666,12 @@ export const dbService = {
       include: { room: true, payments: true }
     });
 
-    const rooms = relatedBookings.map((x: any) => x.room).filter(Boolean);
     const totalAmount = relatedBookings.reduce((sum: number, x: any) => sum + x.totalAmount, 0);
-    const balanceAmount = relatedBookings.reduce((sum: number, x: any) => sum + x.balanceAmount, 0);
     const advancePaid = relatedBookings.reduce((sum: number, x: any) => sum + x.advancePaid, 0);
-    const allPayments = relatedBookings.flatMap((x: any) => x.payments || []);
+    const balanceAmount = relatedBookings.reduce((sum: number, x: any) => sum + x.balanceAmount, 0);
+
+    const rooms = relatedBookings.map((b: any) => b.room).filter(Boolean);
+    const allPayments = relatedBookings.flatMap((b: any) => b.payments);
 
     return {
       ...matchingBooking,
@@ -740,7 +697,7 @@ export const dbService = {
     balanceAmount: number;
     paymentMethod: Booking['paymentMethod'];
     paymentNote?: string;
-  }): Promise<any> {
+  }, guestHouseId: string): Promise<any> {
     const roomIdsList = data.roomIds && data.roomIds.length > 0 ? data.roomIds : [data.roomId!];
     const baseReceiptNo = "RCP" + Math.floor(1000 + Math.random() * 9000);
     
@@ -750,7 +707,7 @@ export const dbService = {
 
       for (let index = 0; index < roomIdsList.length; index++) {
         const rId = roomIdsList[index];
-        const currentRoom = db.rooms.find(r => r.id === rId);
+        const currentRoom = db.rooms.find(r => r.id === rId && r.guestHouseId === guestHouseId);
         const roomRate = currentRoom ? currentRoom.ratePerDay : 300;
         
         const receiptNo = index === 0 ? baseReceiptNo : `${baseReceiptNo}/${index}`;
@@ -762,6 +719,7 @@ export const dbService = {
 
         const newBooking: Booking = {
           id: bookingId,
+          guestHouseId,
           receiptNo,
           guestId: data.guestId,
           roomId: rId,
@@ -785,6 +743,7 @@ export const dbService = {
         if (roomAdvance > 0) {
           db.payments.push({
             id: "p_" + Math.random().toString(36).substr(2, 9),
+            guestHouseId,
             bookingId: bookingId,
             amount: roomAdvance,
             method: data.paymentMethod,
@@ -795,15 +754,15 @@ export const dbService = {
           });
         }
 
-        const roomIdx = db.rooms.findIndex(r => r.id === rId);
+        const roomIdx = db.rooms.findIndex(r => r.id === rId && r.guestHouseId === guestHouseId);
         if (roomIdx !== -1) {
           db.rooms[roomIdx].status = "OCCUPIED";
           db.rooms[roomIdx].updatedAt = new Date().toISOString();
         }
 
-        // Add audit log
         db.auditLogs.unshift({
           id: "log_" + Math.random().toString(36).substr(2, 9),
+          guestHouseId,
           userId: "system-user",
           action: "BOOKING_CREATE",
           details: `Booking ${receiptNo} created (Room ${currentRoom?.roomNumber || rId})`,
@@ -816,23 +775,22 @@ export const dbService = {
       }
 
       writeMockDB(db);
-      const rooms = roomIdsList.map(rId => db.rooms.find(r => r.id === rId)).filter(Boolean);
+      const rooms = roomIdsList.map(rId => db.rooms.find(r => r.id === rId && r.guestHouseId === guestHouseId)).filter(Boolean);
       return {
         ...mainBooking!,
-        guest: db.guests.find(g => g.id === data.guestId),
-        room: db.rooms.find(r => r.id === mainBooking!.roomId),
+        guest: db.guests.find(g => g.id === data.guestId && g.guestHouseId === guestHouseId),
+        room: db.rooms.find(r => r.id === mainBooking!.roomId && r.guestHouseId === guestHouseId),
         payments: db.payments.filter(p => p.bookingId === mainBooking!.id),
         roomNumbers: rooms.map((r: any) => r.roomNumber).join(", ")
       };
     }
 
-    // Prisma Execution
     const result = await prisma.$transaction(async (tx: any) => {
       let firstBooking: any = null;
 
       for (let index = 0; index < roomIdsList.length; index++) {
         const rId = roomIdsList[index];
-        const currentRoom = await tx.room.findUnique({ where: { id: rId } });
+        const currentRoom = await tx.room.findFirstOrThrow({ where: { id: rId, guestHouseId } });
         const roomRate = currentRoom ? currentRoom.ratePerDay : 300;
 
         const receiptNo = index === 0 ? baseReceiptNo : `${baseReceiptNo}/${index}`;
@@ -842,6 +800,7 @@ export const dbService = {
 
         const b = await tx.booking.create({
           data: {
+            guestHouseId,
             receiptNo,
             guestId: data.guestId,
             roomId: rId,
@@ -867,6 +826,7 @@ export const dbService = {
         if (roomAdvance > 0) {
           await tx.payment.create({
             data: {
+              guestHouseId,
               bookingId: b.id,
               amount: roomAdvance,
               method: data.paymentMethod,
@@ -885,9 +845,9 @@ export const dbService = {
     });
 
     const rooms = await prisma.room.findMany({
-      where: { id: { in: roomIdsList } }
+      where: { id: { in: roomIdsList }, guestHouseId }
     });
-    const mainB = await this.getBooking(result.id);
+    const mainB = await this.getBooking(result.id, guestHouseId);
     return {
       ...mainB,
       roomNumbers: rooms.map((r: any) => r.roomNumber).join(", ")
@@ -898,15 +858,16 @@ export const dbService = {
     balanceAmount: number;
     paymentMethod: Booking['paymentMethod'];
     paymentNote?: string;
-  }): Promise<Booking> {
+  }, guestHouseId: string): Promise<Booking> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const bIdx = db.bookings.findIndex(b => b.id === id);
+      const bIdx = db.bookings.findIndex(b => b.id === id && b.guestHouseId === guestHouseId);
       if (bIdx === -1) throw new Error("Booking not found");
 
       const booking = db.bookings[bIdx];
       const baseReceipt = booking.receiptNo.split("/")[0];
       const relatedBookings = db.bookings.filter(b => 
+        b.guestHouseId === guestHouseId &&
         b.status === "ACTIVE" && 
         (b.receiptNo === baseReceipt || b.receiptNo.startsWith(baseReceipt + "/"))
       );
@@ -915,7 +876,7 @@ export const dbService = {
       const additionalCharges = paymentDetails.balanceAmount - aggregatedBalance;
 
       relatedBookings.forEach(b => {
-        const idx = db.bookings.findIndex(x => x.id === b.id);
+        const idx = db.bookings.findIndex(x => x.id === b.id && x.guestHouseId === guestHouseId);
         if (idx !== -1) {
           db.bookings[idx].status = "CHECKED_OUT";
           db.bookings[idx].updatedAt = new Date().toISOString();
@@ -929,6 +890,7 @@ export const dbService = {
             if (paymentDetails.balanceAmount > 0) {
               db.payments.push({
                 id: "p_" + Math.random().toString(36).substr(2, 9),
+                guestHouseId,
                 bookingId: id,
                 amount: paymentDetails.balanceAmount,
                 method: paymentDetails.paymentMethod,
@@ -942,7 +904,7 @@ export const dbService = {
             db.bookings[idx].balanceAmount = 0;
           }
 
-          const rIdx = db.rooms.findIndex(r => r.id === b.roomId);
+          const rIdx = db.rooms.findIndex(r => r.id === b.roomId && r.guestHouseId === guestHouseId);
           if (rIdx !== -1) {
             db.rooms[rIdx].status = "AVAILABLE";
             db.rooms[rIdx].updatedAt = new Date().toISOString();
@@ -950,6 +912,7 @@ export const dbService = {
 
           db.auditLogs.unshift({
             id: "log_" + Math.random().toString(36).substr(2, 9),
+            guestHouseId,
             userId: "system-user",
             action: "CHECKOUT",
             details: `Booking ${b.receiptNo} checked out. Room ${db.rooms[rIdx]?.roomNumber || b.roomId} set to AVAILABLE.`,
@@ -961,18 +924,18 @@ export const dbService = {
       writeMockDB(db);
       return {
         ...booking,
-        guest: db.guests.find(g => g.id === booking.guestId),
-        room: db.rooms.find(r => r.id === booking.roomId),
+        guest: db.guests.find(g => g.id === booking.guestId && g.guestHouseId === guestHouseId),
+        room: db.rooms.find(r => r.id === booking.roomId && r.guestHouseId === guestHouseId),
         payments: db.payments.filter(p => p.bookingId === id)
       };
     }
 
-    // Prisma Transaction
     const result = await prisma.$transaction(async (tx: any) => {
-      const currentBooking = await tx.booking.findUniqueOrThrow({ where: { id } });
+      const currentBooking = await tx.booking.findFirstOrThrow({ where: { id, guestHouseId } });
       const baseReceipt = currentBooking.receiptNo.split("/")[0];
       const relatedBookings = await tx.booking.findMany({
         where: {
+          guestHouseId,
           status: "ACTIVE",
           OR: [
             { receiptNo: baseReceipt },
@@ -999,6 +962,7 @@ export const dbService = {
           if (paymentDetails.balanceAmount > 0) {
             await tx.payment.create({
               data: {
+                guestHouseId,
                 bookingId: id,
                 amount: paymentDetails.balanceAmount,
                 method: paymentDetails.paymentMethod,
@@ -1026,305 +990,286 @@ export const dbService = {
       return currentBooking;
     });
 
-    return await this.getBooking(result.id) as Booking;
+    return await this.getBooking(result.id, guestHouseId) as Booking;
   },
 
-  async transferRoom(bookingId: string, newRoomId: string): Promise<Booking> {
+  async transferRoom(bookingId: string, newRoomId: string, guestHouseId: string): Promise<Booking> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const bIdx = db.bookings.findIndex(b => b.id === bookingId);
+      const bIdx = db.bookings.findIndex(b => b.id === bookingId && b.guestHouseId === guestHouseId);
       if (bIdx === -1) throw new Error("Booking not found");
 
-      const booking = db.bookings[bIdx];
-      const oldRoomId = booking.roomId;
-
-      // Update booking roomId
-      booking.roomId = newRoomId;
-      booking.updatedAt = new Date().toISOString();
-
-      // Free old room
-      const oldRoomIdx = db.rooms.findIndex(r => r.id === oldRoomId);
+      const oldRoomId = db.bookings[bIdx].roomId;
+      
+      // Update room statuses
+      const oldRoomIdx = db.rooms.findIndex(r => r.id === oldRoomId && r.guestHouseId === guestHouseId);
       if (oldRoomIdx !== -1) db.rooms[oldRoomIdx].status = "AVAILABLE";
 
-      // Occupy new room
-      const newRoomIdx = db.rooms.findIndex(r => r.id === newRoomId);
+      const newRoomIdx = db.rooms.findIndex(r => r.id === newRoomId && r.guestHouseId === guestHouseId);
       if (newRoomIdx !== -1) db.rooms[newRoomIdx].status = "OCCUPIED";
 
-      // Log action
+      db.bookings[bIdx].roomId = newRoomId;
+      db.bookings[bIdx].updatedAt = new Date().toISOString();
+
       db.auditLogs.unshift({
         id: "log_" + Math.random().toString(36).substr(2, 9),
+        guestHouseId,
         userId: "system-user",
         action: "ROOM_TRANSFER",
-        details: `Booking ${booking.receiptNo} transferred from Room ${db.rooms[oldRoomIdx]?.roomNumber || oldRoomId} to Room ${db.rooms[newRoomIdx]?.roomNumber || newRoomId}`,
+        details: `Booking ${db.bookings[bIdx].receiptNo} transferred from Room ${db.rooms[oldRoomIdx]?.roomNumber} to ${db.rooms[newRoomIdx]?.roomNumber}`,
         timestamp: new Date().toISOString()
       });
 
       writeMockDB(db);
-      return booking;
+      return db.bookings[bIdx];
     }
 
-    // Prisma Transaction
-    await prisma.$transaction(async (tx: any) => {
-      const b = await tx.booking.findUniqueOrThrow({ where: { id: bookingId } });
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: { roomId: newRoomId }
-      });
-      await tx.room.update({
-        where: { id: b.roomId },
+    const b = await prisma.booking.findFirstOrThrow({ where: { id: bookingId, guestHouseId } });
+    const oldRoomId = b.roomId;
+
+    await prisma.$transaction([
+      prisma.room.update({
+        where: { id: oldRoomId },
         data: { status: "AVAILABLE" }
-      });
-      await tx.room.update({
+      }),
+      prisma.room.update({
         where: { id: newRoomId },
         data: { status: "OCCUPIED" }
-      });
-    });
+      }),
+      prisma.booking.update({
+        where: { id: bookingId },
+        data: { roomId: newRoomId }
+      })
+    ]);
 
-    return await this.getBooking(bookingId) as Booking;
+    return await this.getBooking(bookingId, guestHouseId) as Booking;
   },
 
-  async extendStay(bookingId: string, additionalDays: number, additionalCost: number): Promise<Booking> {
+  async extendStay(bookingId: string, additionalDays: number, additionalCost: number, guestHouseId: string): Promise<Booking> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const bIdx = db.bookings.findIndex(b => b.id === bookingId);
+      const bIdx = db.bookings.findIndex(b => b.id === bookingId && b.guestHouseId === guestHouseId);
       if (bIdx === -1) throw new Error("Booking not found");
 
       const booking = db.bookings[bIdx];
-      booking.noOfDays += additionalDays;
-      
-      const newCheckOut = new Date(booking.checkOutDate);
-      newCheckOut.setDate(newCheckOut.getDate() + additionalDays);
-      booking.checkOutDate = newCheckOut.toISOString();
+      const oldCheckOut = new Date(booking.checkOutDate);
+      const newCheckOut = new Date(oldCheckOut.getTime() + additionalDays * 24 * 60 * 60 * 1000);
 
-      booking.totalAmount += additionalCost;
-      booking.balanceAmount += additionalCost;
-      booking.updatedAt = new Date().toISOString();
+      db.bookings[bIdx].checkOutDate = newCheckOut.toISOString();
+      db.bookings[bIdx].noOfDays += additionalDays;
+      db.bookings[bIdx].totalAmount += additionalCost;
+      db.bookings[bIdx].balanceAmount += additionalCost;
+      db.bookings[bIdx].updatedAt = new Date().toISOString();
 
       db.auditLogs.unshift({
         id: "log_" + Math.random().toString(36).substr(2, 9),
+        guestHouseId,
         userId: "system-user",
         action: "STAY_EXTENSION",
-        details: `Booking ${booking.receiptNo} extended by ${additionalDays} days. Additional cost: ₹${additionalCost}`,
+        details: `Booking ${booking.receiptNo} extended by ${additionalDays} days. New checkout: ${newCheckOut.toLocaleDateString("en-IN")}`,
         timestamp: new Date().toISOString()
       });
 
       writeMockDB(db);
-      return booking;
+      return db.bookings[bIdx];
     }
 
-    const b = await prisma.booking.findUniqueOrThrow({ where: { id: bookingId } });
-    const currentOut = new Date(b.checkOutDate);
-    currentOut.setDate(currentOut.getDate() + additionalDays);
+    const b = await prisma.booking.findFirstOrThrow({ where: { id: bookingId, guestHouseId } });
+    const newCheckOut = new Date(new Date(b.checkOutDate).getTime() + additionalDays * 24 * 60 * 60 * 1000);
 
-    const updated = await prisma.booking.update({
+    await prisma.booking.update({
       where: { id: bookingId },
       data: {
-        noOfDays: b.noOfDays + additionalDays,
-        checkOutDate: currentOut,
-        totalAmount: b.totalAmount + additionalCost,
-        balanceAmount: b.balanceAmount + additionalCost
+        checkOutDate: newCheckOut,
+        noOfDays: { increment: additionalDays },
+        totalAmount: { increment: additionalCost },
+        balanceAmount: { increment: additionalCost }
       }
     });
 
-    return await this.getBooking(updated.id) as Booking;
+    return await this.getBooking(bookingId, guestHouseId) as Booking;
   },
 
-  async cancelBooking(bookingId: string): Promise<Booking> {
+  async cancelBooking(bookingId: string, guestHouseId: string): Promise<Booking> {
     if (isDemoMode()) {
       const db = readMockDB();
-      const bIdx = db.bookings.findIndex(b => b.id === bookingId);
+      const bIdx = db.bookings.findIndex(b => b.id === bookingId && b.guestHouseId === guestHouseId);
       if (bIdx === -1) throw new Error("Booking not found");
 
       const booking = db.bookings[bIdx];
-      booking.status = "CANCELLED";
-      booking.updatedAt = new Date().toISOString();
+      db.bookings[bIdx].status = "CANCELLED";
+      db.bookings[bIdx].balanceAmount = 0;
+      db.bookings[bIdx].updatedAt = new Date().toISOString();
 
-      // Free room
-      const rIdx = db.rooms.findIndex(r => r.id === booking.roomId);
-      if (rIdx !== -1) db.rooms[rIdx].status = "AVAILABLE";
+      const rIdx = db.rooms.findIndex(r => r.id === booking.roomId && r.guestHouseId === guestHouseId);
+      if (rIdx !== -1) {
+        db.rooms[rIdx].status = "AVAILABLE";
+        db.rooms[rIdx].updatedAt = new Date().toISOString();
+      }
 
       db.auditLogs.unshift({
         id: "log_" + Math.random().toString(36).substr(2, 9),
+        guestHouseId,
         userId: "system-user",
         action: "BOOKING_CANCEL",
-        details: `Booking ${booking.receiptNo} cancelled. Room ${db.rooms[rIdx]?.roomNumber || booking.roomId} set to AVAILABLE.`,
+        details: `Booking ${booking.receiptNo} cancelled. Room ${db.rooms[rIdx]?.roomNumber} set to AVAILABLE.`,
         timestamp: new Date().toISOString()
       });
 
       writeMockDB(db);
-      return booking;
+      return db.bookings[bIdx];
     }
 
-    const result = await prisma.$transaction(async (tx: any) => {
-      const b = await tx.booking.update({
+    const b = await prisma.booking.findFirstOrThrow({ where: { id: bookingId, guestHouseId } });
+    
+    await prisma.$transaction([
+      prisma.booking.update({
         where: { id: bookingId },
-        data: { status: "CANCELLED" }
-      });
-      await tx.room.update({
+        data: { status: "CANCELLED", balanceAmount: 0 }
+      }),
+      prisma.room.update({
         where: { id: b.roomId },
         data: { status: "AVAILABLE" }
-      });
-      return b;
-    });
+      })
+    ]);
 
-    return await this.getBooking(result.id) as Booking;
+    return await this.getBooking(bookingId, guestHouseId) as Booking;
   },
 
   // --- PAYMENTS ---
-  async getPayments(): Promise<Payment[]> {
+  async getPayments(guestHouseId: string): Promise<Payment[]> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.payments;
+      return db.payments.filter(p => p.guestHouseId === guestHouseId);
     }
     return await prisma.payment.findMany({
+      where: { guestHouseId },
       orderBy: { date: "desc" }
     }) as unknown as Payment[];
   },
 
   // --- AUDIT LOGS ---
-  async getAuditLogs(): Promise<AuditLog[]> {
+  async getAuditLogs(guestHouseId: string): Promise<AuditLog[]> {
     if (isDemoMode()) {
       const db = readMockDB();
-      return db.auditLogs.map((l: any) => ({
-        ...l,
-        username: l.userId === "admin-id" ? "Admin" : "Reception"
-      }));
+      return db.auditLogs
+        .filter(l => l.guestHouseId === guestHouseId)
+        .map((l: any) => ({
+          ...l,
+          username: l.userId === "kalyani-admin-id" || l.userId === "yathri-admin-id" ? "Admin" : "Reception"
+        }));
     }
     const raw = await prisma.auditLog.findMany({
+      where: { guestHouseId },
       include: { user: true },
       orderBy: { timestamp: "desc" },
       take: 50
     });
     return raw.map((l: any) => ({
       id: l.id,
+      guestHouseId: l.guestHouseId,
       userId: l.userId,
       action: l.action,
       details: l.details,
       timestamp: l.timestamp,
-      username: l.user.name
+      username: l.user?.name || "System"
     }));
   },
 
   // --- SETTINGS ---
-  async getSettings(): Promise<Setting[]> {
+  async getSettings(guestHouseId: string): Promise<Setting[]> {
     if (isDemoMode()) {
-      return readMockDB().settings;
+      return readMockDB().settings.filter(s => s.guestHouseId === guestHouseId);
     }
-    return await prisma.setting.findMany();
-  },
-
-  async updateSetting(key: string, value: string): Promise<Setting> {
-    if (isDemoMode()) {
-      const db = readMockDB();
-      const sIdx = db.settings.findIndex(s => s.key === key);
-      if (sIdx !== -1) {
-        db.settings[sIdx].value = value;
-      } else {
-        db.settings.push({ id: "s_" + Math.random().toString(36).substr(2, 9), key, value });
-      }
-      writeMockDB(db);
-      return db.settings.find(s => s.key === key)!;
-    }
-    return await prisma.setting.upsert({
-      where: { key },
-      update: { value },
-      create: { key, value }
+    return await prisma.setting.findMany({
+      where: { guestHouseId }
     });
   },
 
-  async getFullDatabaseBackup(): Promise<any> {
+  async updateSetting(key: string, value: string, guestHouseId: string): Promise<Setting> {
     if (isDemoMode()) {
-      return readMockDB();
+      const db = readMockDB();
+      const idx = db.settings.findIndex(s => s.key === key && s.guestHouseId === guestHouseId);
+      if (idx !== -1) {
+        db.settings[idx].value = value;
+      } else {
+        db.settings.push({
+          id: "s_" + Math.random().toString(36).substr(2, 9),
+          guestHouseId,
+          key,
+          value
+        });
+      }
+      writeMockDB(db);
+      return db.settings.find(s => s.key === key && s.guestHouseId === guestHouseId)!;
     }
-    const guests = await prisma.guest.findMany();
-    const rooms = await prisma.room.findMany();
-    const bookings = await prisma.booking.findMany({ include: { guest: true, room: true } });
-    const payments = await prisma.payment.findMany();
-    const auditLogs = await prisma.auditLog.findMany();
-    const settings = await prisma.setting.findMany();
+    return await prisma.setting.upsert({
+      where: { guestHouseId_key: { guestHouseId, key } },
+      update: { value },
+      create: { guestHouseId, key, value }
+    });
+  },
+
+  async getFullDatabaseBackup(guestHouseId: string): Promise<any> {
+    if (isDemoMode()) {
+      const db = readMockDB();
+      return {
+        guests: db.guests.filter(g => g.guestHouseId === guestHouseId),
+        rooms: db.rooms.filter(r => r.guestHouseId === guestHouseId),
+        bookings: db.bookings.filter(b => b.guestHouseId === guestHouseId).map(b => ({
+          ...b,
+          guest: db.guests.find(g => g.id === b.guestId),
+          room: db.rooms.find(r => r.id === b.roomId)
+        })),
+        payments: db.payments.filter(p => p.guestHouseId === guestHouseId),
+        auditLogs: db.auditLogs.filter(l => l.guestHouseId === guestHouseId),
+        settings: db.settings.filter(s => s.guestHouseId === guestHouseId)
+      };
+    }
+    const guests = await prisma.guest.findMany({ where: { guestHouseId } });
+    const rooms = await prisma.room.findMany({ where: { guestHouseId } });
+    const bookings = await prisma.booking.findMany({
+      where: { guestHouseId },
+      include: { guest: true, room: true }
+    });
+    const payments = await prisma.payment.findMany({ where: { guestHouseId } });
+    const auditLogs = await prisma.auditLog.findMany({ where: { guestHouseId } });
+    const settings = await prisma.setting.findMany({ where: { guestHouseId } });
     return { guests, rooms, bookings, payments, auditLogs, settings };
   },
 
-  async clearAllData(): Promise<void> {
+  async clearAllData(guestHouseId: string): Promise<void> {
     if (isDemoMode()) {
       const db = readMockDB();
-      db.guests = [];
-      db.bookings = [];
-      db.payments = [];
-      db.auditLogs = [];
+      db.guests = db.guests.filter(g => g.guestHouseId !== guestHouseId);
+      db.bookings = db.bookings.filter(b => b.guestHouseId !== guestHouseId);
+      db.payments = db.payments.filter(p => p.guestHouseId !== guestHouseId);
+      db.auditLogs = db.auditLogs.filter(l => l.guestHouseId !== guestHouseId);
       
-      const roomsList: Room[] = [];
-      for (let i = 1; i <= 36; i++) {
-        let floor = "Ground Floor";
-        if (i > 12 && i <= 24) floor = "First Floor";
-        else if (i > 24) floor = "Second Floor";
-        
-        let capacity = 2;
-        if (i % 3 === 0) capacity = 3;
-        else if (i % 5 === 0) capacity = 4;
-        
-        let facilities = ["Hot Water"];
-        if (i % 2 === 0) facilities.push("TV");
-        if (i % 4 === 0) facilities.push("WiFi");
-        
-        roomsList.push({
-          id: `r${i}`,
-          roomNumber: `${i}`,
-          floor,
-          type: "Room",
-          status: "AVAILABLE",
-          capacity,
-          ratePerDay: 300,
-          facilities,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        } as any);
-      }
-      db.rooms = roomsList;
+      // Make all rooms belonging to this guest house AVAILABLE
+      db.rooms.forEach((r, idx) => {
+        if (r.guestHouseId === guestHouseId) {
+          db.rooms[idx].status = "AVAILABLE";
+        }
+      });
       writeMockDB(db);
       return;
     }
 
-    const prismaClient = prisma as any;
-    await prismaClient.$transaction([
-      prismaClient.payment.deleteMany(),
-      prismaClient.booking.deleteMany(),
-      prismaClient.guest.deleteMany(),
-      prismaClient.auditLog.deleteMany(),
-      prismaClient.room.deleteMany()
+    await prisma.$transaction([
+      prisma.payment.deleteMany({ where: { guestHouseId } }),
+      prisma.booking.deleteMany({ where: { guestHouseId } }),
+      prisma.guest.deleteMany({ where: { guestHouseId } }),
+      prisma.auditLog.deleteMany({ where: { guestHouseId } }),
+      prisma.room.updateMany({
+        where: { guestHouseId },
+        data: { status: "AVAILABLE" }
+      })
     ]);
-
-    const roomsList = [];
-    for (let i = 1; i <= 36; i++) {
-      let floor = "Ground Floor";
-      if (i > 12 && i <= 24) floor = "First Floor";
-      else if (i > 24) floor = "Second Floor";
-      
-      let capacity = 2;
-      if (i % 3 === 0) capacity = 3;
-      else if (i % 5 === 0) capacity = 4;
-      
-      let facilities = ["Hot Water"];
-      if (i % 2 === 0) facilities.push("TV");
-      if (i % 4 === 0) facilities.push("WiFi");
-      
-      roomsList.push({
-        roomNumber: `${i}`,
-        floor,
-        type: "Room",
-        status: "AVAILABLE",
-        capacity,
-        ratePerDay: 300,
-        facilities
-      });
-    }
-    await prismaClient.room.createMany({
-      data: roomsList
-    });
   },
 
   // --- DASHBOARD & ANALYTICS STATS ---
-  async getDashboardStats() {
+  async getDashboardStats(guestHouseId: string) {
     const isDemo = isDemoMode();
     const db = isDemo ? readMockDB() : null;
     
@@ -1333,13 +1278,16 @@ export const dbService = {
     let payments: Payment[] = [];
     
     if (isDemo && db) {
-      rooms = db.rooms;
-      bookings = db.bookings;
-      payments = db.payments;
+      rooms = db.rooms.filter(r => r.guestHouseId === guestHouseId);
+      bookings = db.bookings.filter(b => b.guestHouseId === guestHouseId);
+      payments = db.payments.filter(p => p.guestHouseId === guestHouseId);
     } else {
-      rooms = await prisma.room.findMany() as unknown as Room[];
-      bookings = await prisma.booking.findMany({ include: { guest: true, room: true } }) as unknown as Booking[];
-      payments = await prisma.payment.findMany() as unknown as Payment[];
+      rooms = await prisma.room.findMany({ where: { guestHouseId } }) as unknown as Room[];
+      bookings = await prisma.booking.findMany({ 
+        where: { guestHouseId },
+        include: { guest: true, room: true } 
+      }) as unknown as Booking[];
+      payments = await prisma.payment.findMany({ where: { guestHouseId } }) as unknown as Payment[];
     }
 
     const todayStr = new Date().toDateString();
@@ -1395,9 +1343,8 @@ export const dbService = {
     // Recent Bookings (limit 5)
     const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const recentCheckins = sortedBookings.slice(0, 5).map((b: any) => {
-      // Find guest and room relations if mock
-      const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId) : null);
-      const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId) : null);
+      const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId) : null);
+      const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId) : null);
       return {
         id: b.id,
         receiptNo: b.receiptNo,
@@ -1418,7 +1365,7 @@ export const dbService = {
     const sortedPayments = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const recentPayments = sortedPayments.slice(0, 5).map((p: any) => {
       const booking = bookings.find(b => b.id === p.bookingId);
-      const guest = booking ? (booking.guest || (db ? db.guests.find(g => g.id === booking.guestId) : null)) : null;
+      const guest = booking ? (booking.guest || (db ? db.guests.find(g => g.id === booking.guestId && g.guestHouseId === guestHouseId) : null)) : null;
       return {
         id: p.id,
         receiptNo: p.receiptNo,
@@ -1436,8 +1383,8 @@ export const dbService = {
       .sort((a, b) => new Date(a.checkOutDate).getTime() - new Date(b.checkOutDate).getTime())
       .slice(0, 5)
       .map((b: any) => {
-        const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId) : null);
-        const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId) : null);
+        const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId) : null);
+        const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId) : null);
         return {
           id: b.id,
           receiptNo: b.receiptNo,
@@ -1451,7 +1398,7 @@ export const dbService = {
     const getOccupiedDetails = (roomId: string) => {
       const activeBooking = bookings.find(b => b.roomId === roomId && b.status === "ACTIVE");
       if (!activeBooking) return undefined;
-      const guest = activeBooking.guest || (db ? db.guests.find(g => g.id === activeBooking.guestId) : null);
+      const guest = activeBooking.guest || (db ? db.guests.find(g => g.id === activeBooking.guestId && g.guestHouseId === guestHouseId) : null);
       return {
         guestName: guest?.name || "Unknown Guest",
         checkOutDate: activeBooking.checkOutDate

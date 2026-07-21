@@ -1,4 +1,4 @@
-import { dbService } from "@/lib/db-service";
+import { getPayments, getBookings } from "@/app/actions";
 import ReportsClient from "./ReportsClient";
 
 export const revalidate = 0;
@@ -9,8 +9,8 @@ export const metadata = {
 };
 
 export default async function ReportsPage() {
-  const payments = await dbService.getPayments();
-  const bookings = await dbService.getBookings();
+  const payments = await getPayments();
+  const bookings = await getBookings();
 
   return (
     <ReportsClient initialPayments={payments} initialBookings={bookings} />

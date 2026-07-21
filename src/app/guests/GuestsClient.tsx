@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Phone, User, Users, MapPin, History, PlusCircle, CreditCard, Sparkles, Eye } from "lucide-react";
+import { Search, Phone, User, Users, MapPin, History, PlusCircle, CreditCard, Sparkles, Eye, Loader2 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface GuestsClientProps {
   initialGuests: any[];
 }
 
 export default function GuestsClient({ initialGuests }: GuestsClientProps) {
+  const router = useRouter();
   const [guests, setGuests] = useState<any[]>(initialGuests);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
 
   const filteredGuests = guests.filter((g) => {
     const cleanSearch = searchQuery.toLowerCase().trim();
@@ -72,13 +75,21 @@ export default function GuestsClient({ initialGuests }: GuestsClientProps) {
                     <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-wider">{guest.gender}, Age: {guest.age} • {guest.occupation || "Devotee"}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <Link
-                      href={`/guests/${guest.id}`}
-                      className="flex items-center gap-1 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                    <button
+                      onClick={() => {
+                        setLoadingProfileId(guest.id);
+                        router.push(`/guests/${guest.id}`);
+                      }}
+                      disabled={loadingProfileId !== null}
+                      className="flex items-center gap-1 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <Eye size={13} />
+                      {loadingProfileId === guest.id ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Eye size={13} />
+                      )}
                       View Profile
-                    </Link>
+                    </button>
                      {!guest.hasActiveStay ? (
                       <Link
                         href={`/bookings/new?phone=${guest.phone}`}

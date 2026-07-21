@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ShieldAlert, User, Bed, CreditCard, FolderSync } from "lucide-react";
+import { Search, ShieldAlert, User, Bed, CreditCard, FolderSync, Loader2 } from "lucide-react";
 import Card, { CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { searchGuest, getBookings } from "../actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function GlobalSearchPage() {
   const toast = useToast();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<{
     guests: any[];
@@ -172,12 +175,19 @@ export default function GlobalSearchPage() {
                           Checkout
                         </Link>
                       )}
-                      <Link
-                        href={`/guests/${g.id}`}
-                        className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      <button
+                        onClick={() => {
+                          setLoadingProfileId(g.id);
+                          router.push(`/guests/${g.id}`);
+                        }}
+                        disabled={loadingProfileId !== null}
+                        className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
                       >
+                        {loadingProfileId === g.id && (
+                          <Loader2 size={13} className="animate-spin" />
+                        )}
                         View Profile
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -210,12 +220,19 @@ export default function GlobalSearchPage() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Link
-                        href={`/guests/${b.guestId}`}
-                        className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      <button
+                        onClick={() => {
+                          setLoadingProfileId(b.guestId);
+                          router.push(`/guests/${b.guestId}`);
+                        }}
+                        disabled={loadingProfileId !== null}
+                        className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
                       >
+                        {loadingProfileId === b.guestId && (
+                          <Loader2 size={13} className="animate-spin" />
+                        )}
                         View Profile
-                      </Link>
+                      </button>
                       {b.status === "ACTIVE" && (
                         <Link
                           href={`/checkout?receipt=${b.receiptNo}`}
