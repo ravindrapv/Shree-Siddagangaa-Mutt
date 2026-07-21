@@ -1542,14 +1542,154 @@ export const dbService = {
     const isDemo = isDemoMode();
     const db = isDemo ? readMockDB() : null;
     
-    let rooms: Room[] = [];
-    let bookings: Booking[] = [];
-    let payments: Payment[] = [];
-    
     if (isDemo && db) {
-      rooms = db.rooms.filter(r => r.guestHouseId === guestHouseId);
-      bookings = db.bookings.filter(b => b.guestHouseId === guestHouseId);
-      payments = db.payments.filter(p => p.guestHouseId === guestHouseId);
+      const rooms = db.rooms.filter(r => r.guestHouseId === guestHouseId);
+      const bookings = db.bookings.filter(b => b.guestHouseId === guestHouseId);
+      const payments = db.payments.filter(p => p.guestHouseId === guestHouseId);
+      
+      const todayStr = new Date().toDateString();
+
+      // Today's Checkins
+      const todayCheckins = bookings.filter(b => {
+        const checkinStr = new Date(b.checkInDate).toDateString();
+        return checkinStr === todayStr && b.status === "ACTIVE";
+      });
+
+      // Today's Checkouts
+      const todayCheckouts = bookings.filter(b => {
+        const checkoutStr = new Date(b.checkOutDate).toDateString();
+        return checkoutStr === todayStr && b.status === "CHECKED_OUT";
+      });
+
+      // Room Occupancy Breakdown
+      const occupiedCount = rooms.filter(r => r.status === "OCCUPIED").length;
+      const availableCount = rooms.filter(r => r.status === "AVAILABLE").length;
+      const cleaningCount = rooms.filter(r => r.status === "CLEANING").length;
+      const maintenanceCount = rooms.filter(r => r.status === "MAINTENANCE").length;
+
+      // Stays collections based strictly on Checked-out bookings (rooms vacated)
+      const checkedOutBookings = bookings.filter(b => b.status === "CHECKED_OUT");
+      
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todayCollection = checkedOutBookings
+        .filter(b => {
+          const checkoutStr = new Date(b.updatedAt || b.checkOutDate).toDateString();
+          return checkoutStr === todayStr;
+        })
+        .reduce((acc, b) => acc + b.totalAmount, 0);
+
+      const getCollectionForDays = (days: number) => {
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        return checkedOutBookings
+          .filter(b => new Date(b.updatedAt || b.checkOutDate).getTime() >= cutoff)
+          .reduce((acc, b) => acc + b.totalAmount, 0);
+      };
+
+      const last7DaysCollection = getCollectionForDays(7);
+      const lastMonthCollection = getCollectionForDays(30);
+      const yearCollection = getCollectionForDays(365);
+      const totalCollection = checkedOutBookings.reduce((acc, b) => acc + b.totalAmount, 0);
+
+      // Pending Payments
+      const pendingAmount = bookings
+        .filter(b => b.status === "ACTIVE")
+        .reduce((acc, b) => acc + b.balanceAmount, 0);
+
+      // Recent Bookings (limit 5)
+      const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const recentCheckins = sortedBookings.slice(0, 5).map((b: any) => {
+        const guest = db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId);
+        const room = db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId);
+        return {
+          id: b.id,
+          receiptNo: b.receiptNo,
+          guestName: guest?.name || "Unknown Guest",
+          phone: guest?.phone || "N/A",
+          roomNumber: room?.roomNumber || "N/A",
+          roomType: room?.type || "N/A",
+          checkInDate: b.checkInDate,
+          checkOutDate: b.checkOutDate,
+          totalAmount: b.totalAmount,
+          advancePaid: b.advancePaid,
+          balanceAmount: b.balanceAmount,
+          status: b.status
+        };
+      });
+
+      // Recent Payments
+      const sortedPayments = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const recentPayments = sortedPayments.slice(0, 5).map((p: any) => {
+        const booking = bookings.find(b => b.id === p.bookingId);
+        const guest = booking ? db.guests.find(g => g.id === booking.guestId && g.guestHouseId === guestHouseId) : null;
+        return {
+          id: p.id,
+          receiptNo: p.receiptNo,
+          guestName: guest?.name || "N/A",
+          amount: p.amount,
+          method: p.method,
+          date: p.date,
+          notes: p.notes
+        };
+      });
+
+      // Upcoming Checkouts (active bookings checking out soon)
+      const upcomingCheckouts = bookings
+        .filter(b => b.status === "ACTIVE")
+        .sort((a, b) => new Date(a.checkOutDate).getTime() - new Date(b.checkOutDate).getTime())
+        .slice(0, 5)
+        .map((b: any) => {
+          const guest = db.guests.find(g => g.id === b.guestId && g.guestHouseId === guestHouseId);
+          const room = db.rooms.find(r => r.id === b.roomId && r.guestHouseId === guestHouseId);
+          return {
+            id: b.id,
+            receiptNo: b.receiptNo,
+            guestName: guest?.name || "N/A",
+            roomNumber: room?.roomNumber || "N/A",
+            checkOutDate: b.checkOutDate,
+            balanceAmount: b.balanceAmount
+          };
+        });
+
+      const getOccupiedDetails = (roomId: string) => {
+        const activeBooking = bookings.find(b => b.roomId === roomId && b.status === "ACTIVE");
+        if (!activeBooking) return undefined;
+        const guest = db.guests.find(g => g.id === activeBooking.guestId && g.guestHouseId === guestHouseId);
+        return {
+          guestName: guest?.name || "Unknown Guest",
+          checkOutDate: activeBooking.checkOutDate
+        };
+      };
+
+      return {
+        stats: {
+          todayCheckinsCount: todayCheckins.length,
+          todayCheckoutsCount: todayCheckouts.length,
+          occupiedCount,
+          availableCount,
+          cleaningCount,
+          maintenanceCount,
+          todayCollection,
+          cashCollection: todayCollection,
+          upiCollection: 0,
+          cardCollection: 0,
+          last7DaysCollection,
+          lastMonthCollection,
+          yearCollection,
+          totalCollection,
+          pendingAmount
+        },
+        recentCheckins,
+        recentPayments,
+        upcomingCheckouts,
+        floorStatus: {
+          Ground: rooms.filter(r => r.floor.includes("Ground")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r),
+          First: rooms.filter(r => r.floor.includes("First")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r),
+          Second: rooms.filter(r => r.floor.includes("Second")).map(r => r.status === "OCCUPIED" ? { ...r, occupiedDetails: getOccupiedDetails(r.id) } : r)
+        }
+      };
+    }
     // --- PostgreSQL optimized dashboard ---
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -1851,7 +1991,6 @@ export const dbService = {
         Second: mappedRooms.filter(r => r.floor.includes("Second"))
       }
     };
-  }
   },
 
   async getReportData(
