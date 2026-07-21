@@ -68,7 +68,7 @@ export const renderA4Receipt = (booking: any, copyType: "devotee" | "office", ad
         <div className="text-center flex-1 mx-4">
           <h2 className="text-[15px] font-black tracking-wide leading-tight text-black font-bold">ಶ್ರೀ ಸಿದ್ದಗಂಗಾ ಮಠ, ತುಮಕೂರು</h2>
           <h3 className="text-[13px] font-extrabold text-orange-600 leading-tight mt-0.5">{guestHouseKannada} ({guestHouseEnglish})</h3>
-          <p className="text-[8px] text-gray-500 font-semibold leading-tight mt-0.5">ಮಠದ ರಸ್ತೆ, ತುಮಕೂರು, ಕರ್ನಾಟಕ - 572104 (Mutt Road, Tumkur, Karnataka - 572104)</p>
+          <p className="text-[8px] text-gray-500 font-semibold leading-tight mt-0.5">ಕ್ಯಾತಸಂದ್ರ, ಸಿದ್ದಗಂಗಾ ಮಠ, ತುಮಕೂರು ಜಿಲ್ಲೆ. (KYATSANDRA, Siddaganga Math, Tumkur District.)</p>
         </div>
 
         {/* Right Info (QR & Copy Label) */}
@@ -106,9 +106,9 @@ export const renderA4Receipt = (booking: any, copyType: "devotee" | "office", ad
             <span className="text-gray-600 font-medium">ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (Phone):</span>
             <span>{booking.guest?.phone}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600 font-medium">ವಿಳಾಸ (Address):</span>
-            <span className="font-semibold truncate max-w-[140px]" title={booking.guest?.address || "Bangalore"}>
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-gray-600 font-medium flex-shrink-0">ವಿಳಾಸ (Address):</span>
+            <span className="font-semibold text-right text-black leading-tight break-words max-w-[170px]">
               {booking.guest?.address || "Bangalore"}
             </span>
           </div>
