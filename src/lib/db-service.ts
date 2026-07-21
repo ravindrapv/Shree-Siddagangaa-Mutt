@@ -394,11 +394,11 @@ export const dbService = {
   },
 
   async searchGuest(query: string): Promise<Guest[]> {
-    const db = readMockDB();
     const cleanQuery = query.toLowerCase().trim();
     if (!cleanQuery) return [];
 
     if (isDemoMode()) {
+      const db = readMockDB();
       const filtered = db.guests.filter(
         g =>
           g.name.toLowerCase().includes(cleanQuery) ||
@@ -1183,8 +1183,8 @@ export const dbService = {
 
   // --- AUDIT LOGS ---
   async getAuditLogs(): Promise<AuditLog[]> {
-    const db = readMockDB();
     if (isDemoMode()) {
+      const db = readMockDB();
       return db.auditLogs.map((l: any) => ({
         ...l,
         username: l.userId === "admin-id" ? "Admin" : "Reception"
@@ -1325,13 +1325,14 @@ export const dbService = {
 
   // --- DASHBOARD & ANALYTICS STATS ---
   async getDashboardStats() {
-    const db = readMockDB();
+    const isDemo = isDemoMode();
+    const db = isDemo ? readMockDB() : null;
     
     let rooms: Room[] = [];
     let bookings: Booking[] = [];
     let payments: Payment[] = [];
     
-    if (isDemoMode()) {
+    if (isDemo && db) {
       rooms = db.rooms;
       bookings = db.bookings;
       payments = db.payments;
@@ -1395,8 +1396,8 @@ export const dbService = {
     const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const recentCheckins = sortedBookings.slice(0, 5).map((b: any) => {
       // Find guest and room relations if mock
-      const guest = b.guest || db.guests.find(g => g.id === b.guestId);
-      const room = b.room || db.rooms.find(r => r.id === b.roomId);
+      const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId) : null);
+      const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId) : null);
       return {
         id: b.id,
         receiptNo: b.receiptNo,
@@ -1417,7 +1418,7 @@ export const dbService = {
     const sortedPayments = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const recentPayments = sortedPayments.slice(0, 5).map((p: any) => {
       const booking = bookings.find(b => b.id === p.bookingId);
-      const guest = booking ? (booking.guest || db.guests.find(g => g.id === booking.guestId)) : null;
+      const guest = booking ? (booking.guest || (db ? db.guests.find(g => g.id === booking.guestId) : null)) : null;
       return {
         id: p.id,
         receiptNo: p.receiptNo,
@@ -1435,8 +1436,8 @@ export const dbService = {
       .sort((a, b) => new Date(a.checkOutDate).getTime() - new Date(b.checkOutDate).getTime())
       .slice(0, 5)
       .map((b: any) => {
-        const guest = b.guest || db.guests.find(g => g.id === b.guestId);
-        const room = b.room || db.rooms.find(r => r.id === b.roomId);
+        const guest = b.guest || (db ? db.guests.find(g => g.id === b.guestId) : null);
+        const room = b.room || (db ? db.rooms.find(r => r.id === b.roomId) : null);
         return {
           id: b.id,
           receiptNo: b.receiptNo,
@@ -1450,7 +1451,7 @@ export const dbService = {
     const getOccupiedDetails = (roomId: string) => {
       const activeBooking = bookings.find(b => b.roomId === roomId && b.status === "ACTIVE");
       if (!activeBooking) return undefined;
-      const guest = activeBooking.guest || (isDemoMode() ? db.guests.find(g => g.id === activeBooking.guestId) : null);
+      const guest = activeBooking.guest || (db ? db.guests.find(g => g.id === activeBooking.guestId) : null);
       return {
         guestName: guest?.name || "Unknown Guest",
         checkOutDate: activeBooking.checkOutDate

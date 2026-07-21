@@ -2,6 +2,8 @@
 
 import { dbService, Guest, Room, Booking, Payment, AuditLog, Setting } from "@/lib/db-service";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export async function getDashboardStats() {
   try {
@@ -265,5 +267,58 @@ export async function updateGuestIdCardPhoto(guestId: string, idCardPhotoUrl: st
   } catch (error) {
     console.error("Failed to update guest ID card photo:", error);
     throw new Error("Failed to update guest ID card photo.");
+  }
+}
+
+export async function authenticateOperator(username: string, password: string, building: "Kalyani" | "Yathri") {
+  try {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+      let isValid = false;
+      let detectedRole = "";
+      if (building === "Kalyani") {
+        if (username === "kalyani_reception" && password === "KalyaniDesk@Rec44") {
+          isValid = true;
+          detectedRole = "RECEPTION";
+        } else if (username === "kalyani_admin" && password === "SiddhaKalyani#Ad99") {
+          isValid = true;
+          detectedRole = "ADMIN";
+        }
+      } else {
+        if (username === "yathri_reception" && password === "YathriDesk&Rec33") {
+          isValid = true;
+          detectedRole = "RECEPTION";
+        } else if (username === "yathri_admin" && password === "MuttYathri$Ad88") {
+          isValid = true;
+          detectedRole = "ADMIN";
+        }
+      }
+      return { isValid, role: detectedRole };
+    }
+
+    // Database authentication
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+    if (!user) {
+      return { isValid: false, role: "" };
+    }
+
+    // Verify username building matches prefix
+    if (building === "Kalyani" && !username.startsWith("kalyani_")) {
+      return { isValid: false, role: "" };
+    }
+    if (building === "Yathri" && !username.startsWith("yathri_")) {
+      return { isValid: false, role: "" };
+    }
+
+    const matches = await bcrypt.compare(password, user.passwordHash);
+    if (!matches) {
+      return { isValid: false, role: "" };
+    }
+
+    return { isValid: true, role: user.role };
+  } catch (error) {
+    console.error("Failed to authenticate operator:", error);
+    return { isValid: false, role: "" };
   }
 }

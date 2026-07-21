@@ -85,6 +85,23 @@
       "createdAt": "2026-07-20T19:28:47.195Z",
       "updatedAt": "2026-07-20T19:44:42.467Z",
       "idCardPhotoUrl": ""
+    },
+    {
+      "name": "amar ",
+      "phone": "3893859859",
+      "address": "hebal,Bengalurur,karnataka",
+      "gender": "Male",
+      "age": 24,
+      "occupation": "Business",
+      "district": "Bengaluru",
+      "state": "Karnataka",
+      "pin": "572101",
+      "idType": "Aadhaar Card",
+      "idNumber": "359594589869",
+      "familyMembers": [],
+      "id": "g_d5uw7d4gr",
+      "createdAt": "2026-07-21T18:38:55.245Z",
+      "updatedAt": "2026-07-21T18:38:55.245Z"
     }
   ],
   "rooms": [
@@ -93,14 +110,14 @@
       "roomNumber": "1",
       "floor": "Ground Floor",
       "type": "Room",
-      "status": "AVAILABLE",
+      "status": "OCCUPIED",
       "capacity": 2,
       "ratePerDay": 300,
       "facilities": [
         "Hot Water"
       ],
       "createdAt": "2026-07-17T10:22:14.273Z",
-      "updatedAt": "2026-07-20T19:54:26.176Z"
+      "updatedAt": "2026-07-21T18:39:01.077Z"
     },
     {
       "id": "r2",
@@ -715,6 +732,25 @@
       "paymentNote": "Advance payment received.",
       "createdAt": "2026-07-20T19:29:03.009Z",
       "updatedAt": "2026-07-20T19:54:26.176Z"
+    },
+    {
+      "id": "b_tkkb4dile",
+      "receiptNo": "RCP6387",
+      "guestId": "g_d5uw7d4gr",
+      "roomId": "r1",
+      "checkInDate": "2026-07-21T00:00:00.000Z",
+      "checkOutDate": "2026-07-22T00:00:00.000Z",
+      "noOfDays": 1,
+      "noOfPersons": 1,
+      "discount": 0,
+      "advancePaid": 500,
+      "totalAmount": 300,
+      "balanceAmount": -200,
+      "status": "ACTIVE",
+      "paymentMethod": "CASH",
+      "paymentNote": "Advance payment received.",
+      "createdAt": "2026-07-21T18:39:01.077Z",
+      "updatedAt": "2026-07-21T18:39:01.077Z"
     }
   ],
   "payments": [
@@ -777,9 +813,26 @@
       "date": "2026-07-20T19:54:26.176Z",
       "notes": "Settled final balance at checkout.",
       "createdAt": "2026-07-20T19:54:26.176Z"
+    },
+    {
+      "id": "p_a3xvlc8zm",
+      "bookingId": "b_tkkb4dile",
+      "amount": 500,
+      "method": "CASH",
+      "receiptNo": "RCP6387",
+      "date": "2026-07-21T18:39:01.077Z",
+      "notes": "Advance Booking Payment",
+      "createdAt": "2026-07-21T18:39:01.077Z"
     }
   ],
   "auditLogs": [
+    {
+      "id": "log_1p3n8eogw",
+      "userId": "system-user",
+      "action": "BOOKING_CREATE",
+      "details": "Booking RCP6387 created (Room 1)",
+      "timestamp": "2026-07-21T18:39:01.077Z"
+    },
     {
       "id": "log_f5kxso169",
       "userId": "system-user",

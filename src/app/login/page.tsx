@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Lock, ArrowRight, Shield } from "lucide-react";
 import Card from "@/components/ui/Card";
+import { authenticateOperator } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       toast.error("Please enter both username and password");
@@ -23,50 +24,32 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await authenticateOperator(username.trim(), password, selectedBuilding);
       setIsLoading(false);
 
-      // Perform validation check
-      let isValid = false;
-      let detectedRole = "";
-
-      if (selectedBuilding === "Kalyani") {
-        if (username === "kalyani_reception" && password === "KalyaniDesk@Rec44") {
-          isValid = true;
-          detectedRole = "RECEPTION";
-        } else if (username === "kalyani_admin" && password === "SiddhaKalyani#Ad99") {
-          isValid = true;
-          detectedRole = "ADMIN";
-        }
-      } else {
-        if (username === "yathri_reception" && password === "YathriDesk&Rec33") {
-          isValid = true;
-          detectedRole = "RECEPTION";
-        } else if (username === "yathri_admin" && password === "MuttYathri$Ad88") {
-          isValid = true;
-          detectedRole = "ADMIN";
-        }
-      }
-
-      if (!isValid) {
+      if (!res.isValid) {
         toast.error("Invalid operator credentials for the selected guest house.");
         return;
       }
 
       const buildingName = selectedBuilding === "Kalyani" ? "Kalyani Guest House" : "Yathri Nivasa";
-      const name = detectedRole === "ADMIN"
+      const name = res.role === "ADMIN"
         ? (selectedBuilding === "Kalyani" ? "Kalyani Admin" : "Yathri Admin")
         : (selectedBuilding === "Kalyani" ? "Kalyani Reception" : "Yathri Reception");
 
       // Store context cookies
       document.cookie = `guesthouse_username=${username}; path=/; max-age=86400`;
-      document.cookie = `guesthouse_role=${detectedRole}; path=/; max-age=86400`;
+      document.cookie = `guesthouse_role=${res.role}; path=/; max-age=86400`;
       document.cookie = `guesthouse_building=${buildingName}; path=/; max-age=86400`;
       document.cookie = `guesthouse_name=${name}; path=/; max-age=86400`;
 
       toast.success(`Welcome back to ${buildingName} stay console!`);
       router.push("/");
-    }, 850);
+    } catch (err) {
+      setIsLoading(false);
+      toast.error("Authentication failed. Please try again.");
+    }
   };
 
   // Helper shortcut for user verification
